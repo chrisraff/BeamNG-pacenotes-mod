@@ -40,7 +40,7 @@ local function queueUpUntil(lookahead_target)
         if note.d > M.distance_of_last_queued_note and note.d < lookahead_target then
             local newSound = {
                 played = false,
-                file = 'art/sounds/smi_mixed_1/pacenote_' .. i-1 .. '.wav'
+                file = 'art/sounds/' .. M.missionHandle.id .. '/pacenotes/pacenote_' .. i-1 .. '.wav'
             }
             table.insert(M.audioQueue, newSound)
             print('queing note ' .. i)
@@ -80,10 +80,10 @@ local function resetRally()
 end
 
 local function loadRally(mission)
-    M.mode = "rally"
+    local file = readJsonFile('art/sounds/' .. mission.id .. '/pacenotes.json')
+    if not file then return end
 
-    -- TODO figure out the appropriate thing to load
-    local file = readJsonFile('levels/small_island/pacenotes/intro_rally_stage1.json')
+    M.mode = "rally"
 
     M.checkpoints_array = file[1]
     M.pacenotes_data = file[2]
