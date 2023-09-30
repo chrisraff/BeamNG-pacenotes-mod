@@ -10,7 +10,8 @@ M.mode = "none"
 M.settings = {
     sound_data = {
         volume = 10
-    }
+    },
+    reset_threshold = 10
 }
 
 M.checkpoints_array = nil
@@ -19,6 +20,7 @@ M.pacenotes_data = nil
 
 M.last_distance = 0
 M.distance_of_last_queued_note = 0
+M.last_position = vec3(0, 0, 0)
 
 M.audioQueue = {}
 
@@ -26,12 +28,19 @@ M.lookahead_distance = 150
 
 M.tick = 0
 
+local function computeDistSquared(x1, y1, z1, x2, y2, z2)
+    local dx = x1 - x2
+    local dy = y1 - y2
+    local dz = z1 - z2
+    return dx * dx + dy * dy + dz * dz
+end
+
 local function queueUpUntil(lookahead_target)
     for i, note in ipairs(M.pacenotes_data) do
         if note.d > M.distance_of_last_queued_note and note.d < lookahead_target then
             local newSound = {
                 played = false,
-                file = 'art/sounds/smi_mixed_1/pacenote_' .. i .. '.wav'
+                file = 'art/sounds/smi_mixed_1/pacenote_' .. i-1 .. '.wav'
             }
             table.insert(M.audioQueue, newSound)
             print('queing note ' .. i)
@@ -40,7 +49,14 @@ local function queueUpUntil(lookahead_target)
     M.distance_of_last_queued_note = math.max(lookahead_target, M.distance_of_last_queued_note)
 end
 
+local function clearQueue()
+    if #M.audioQueue > 0 then
+        M.audioQueue = {M.audioQueue[1]}
+    end
+end
+
 local function resetRally()
+    print('resetRally called')
     local my_veh = be:getPlayerVehicle(0)
     if my_veh == nil then return end
 
@@ -48,10 +64,7 @@ local function resetRally()
     local distance = math.huge
     local position = my_veh:getPosition()
     for i, checkpoint in ipairs(M.checkpoints_array) do
-        local dx = checkpoint[1] - position.x
-        local dy = checkpoint[2] - position.y
-        local dz = checkpoint[3] - position.z
-        local squaredDistance = dx * dx + dy * dy + dz * dz
+        local squaredDistance = computeDistSquared(checkpoint[1], checkpoint[2], checkpoint[3], position.x, position.y, position.z)
 
         if squaredDistance < distance then
             M.checkpoint_index = i
@@ -62,6 +75,8 @@ local function resetRally()
     M.last_distance = M.checkpoints_array[M.checkpoint_index][4]
 
     M.distance_of_last_queued_note = M.last_distance
+
+    M.last_position = position
 end
 
 local function loadRally(mission)
@@ -95,10 +110,10 @@ local function onAnyMissionChanged(started, mission, userSettings)
 end
 
 local function updateRally(dt)
+    if M.mode ~= "rally" then return end
+
     local my_veh = be:getPlayerVehicle(0)
     if my_veh == nil then return end
-
-    if M.mode ~= "rally" then return end
 
     M.tick = M.tick + dt
 
@@ -108,18 +123,22 @@ local function updateRally(dt)
 
     local position = my_veh:getPosition()
     local shortest_distance = math.huge
-    -- check the surrounding
-    for i = math.max(M.checkpoint_index - 1, 1), math.min(M.checkpoint_index + 1, #M.checkpoints_array) do
-        local dx = M.checkpoints_array[i][1] - position.x
-        local dy = M.checkpoints_array[i][2] - position.y
-        local dz = M.checkpoints_array[i][3] - position.z
-        local squaredDistance = dx * dx + dy * dy + dz * dz
 
-        if squaredDistance < shortest_distance then
-            M.checkpoint_index = i
-            shortest_distance = squaredDistance
+    if computeDistSquared(position.x, position.y, position.z, M.last_position.x, M.last_position.y, M.last_position.z) > M.settings.reset_threshold * M.settings.reset_threshold then
+        resetRally()
+    else
+        -- check the surrounding
+        for i = math.max(M.checkpoint_index - 2, 1), math.min(M.checkpoint_index + 2, #M.checkpoints_array) do
+            local squaredDistance = computeDistSquared(M.checkpoints_array[i][1], M.checkpoints_array[i][2], M.checkpoints_array[i][3], position.x, position.y, position.z)
+
+            if squaredDistance < shortest_distance then
+                M.checkpoint_index = i
+                shortest_distance = squaredDistance
+            end
         end
     end
+
+    M.last_position = position
 
     queueUpUntil(M.checkpoints_array[M.checkpoint_index][4] + M.lookahead_distance)
 end
