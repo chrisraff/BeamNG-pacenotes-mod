@@ -77,11 +77,15 @@ local function resetRally()
     M.distance_of_last_queued_note = M.last_distance
 
     M.last_position = position
+
+    clearQueue()
 end
 
 local function loadRally(mission)
     local file = readJsonFile('art/sounds/' .. mission.id .. '/pacenotes.json')
     if not file then return end
+
+    M.missionHandle = mission
 
     M.mode = "rally"
 
@@ -92,6 +96,9 @@ local function loadRally(mission)
 end
 
 local function cleanup()
+    print('closing rally')
+    M.mode = "none"
+    M.missionHandle = nil
 end
 
 local function test()
@@ -101,11 +108,9 @@ end
 local function onAnyMissionChanged(started, mission, userSettings)
     if started == "started" then
         print('starting rally')
-        M.missionHandle = mission
         loadRally(mission)
     elseif started == "stopped" then
-        print('closing rally')
-        M.mode = "none"
+        cleanup()
     end
 end
 
@@ -174,8 +179,32 @@ local function onUpdate(dt)
     updateAudioQueue(dt)
 end
 
+local function onScenarioChange(scenario)
+    if not scenario then
+        cleanup()
+        return
+    end
+
+    M.debugHandle = scenario
+
+    local resource_path = scenario.sourceFile:sub(1, -6) -- remove .json from the source file
+
+    -- don't reset the scenario if it's already loaded
+    if M.missionHandle and resource_path == M.missionHandle.id then return end
+
+    print('rally scenario path: ' .. resource_path)
+
+    M.missionHandle = {
+        fakeMission = true,
+        id = resource_path
+    }
+
+    loadRally(M.missionHandle)
+end
+
 M.test = test
 M.onAnyMissionChanged = onAnyMissionChanged
 M.onUpdate = onUpdate
+M.onScenarioChange = onScenarioChange
 
 return M
