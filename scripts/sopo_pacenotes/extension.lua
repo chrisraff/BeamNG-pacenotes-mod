@@ -20,6 +20,8 @@ M.pacenotes_data = nil
 M.last_distance = 0
 M.distance_of_last_queued_note = 0
 
+M.audioQueue = {}
+
 M.lookahead_distance = 150
 
 M.tick = 0
@@ -27,7 +29,11 @@ M.tick = 0
 local function queueUpUntil(lookahead_target)
     for i, note in ipairs(M.pacenotes_data) do
         if note.d > M.distance_of_last_queued_note and note.d < lookahead_target then
-            Engine.Audio.playOnce('AudioGui', 'art/sounds/smi_mixed_1/pacenote_' .. i .. '.wav', M.settings.sound_data)
+            local newSound = {
+                played = false,
+                file = 'art/sounds/smi_mixed_1/pacenote_' .. i .. '.wav'
+            }
+            table.insert(M.audioQueue, newSound)
             print('queing note ' .. i)
         end
     end
@@ -83,11 +89,12 @@ local function onAnyMissionChanged(started, mission, userSettings)
         M.missionHandle = mission
         loadRally(mission)
     elseif started == "stopped" then
-        cleanup()
+        print('closing rally')
+        M.mode = "none"
     end
 end
 
-local function onUpdate(dt)
+local function updateRally(dt)
     local my_veh = be:getPlayerVehicle(0)
     if my_veh == nil then return end
 
@@ -115,6 +122,37 @@ local function onUpdate(dt)
     end
 
     queueUpUntil(M.checkpoints_array[M.checkpoint_index][4] + M.lookahead_distance)
+end
+
+local function updateAudioQueue(dt)
+    -- heavily inspired by pacenotes core mod: https://www.beamng.com/resources/pacenotes-core.10349/
+
+    -- if empty, do nothing
+    if #M.audioQueue == 0 then return end
+
+    local currentSound = M.audioQueue[1]
+
+    -- play the sound
+    if not currentSound.played then
+        local result = Engine.Audio.playOnce('AudioGui', currentSound.file, M.settings.sound_data)
+        if result ~= nil then
+            currentSound.time = result.len
+        else
+            currentSound.time = 0
+        end
+        currentSound.played = 0
+    -- track the time of the sound
+    else
+        currentSound.time = currentSound.time - dt
+        if currentSound.time <= 0 then
+            table.remove(M.audioQueue, 1)
+        end
+    end
+end
+
+local function onUpdate(dt)
+    updateRally(dt)
+    updateAudioQueue(dt)
 end
 
 M.test = test
