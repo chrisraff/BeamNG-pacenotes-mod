@@ -28,6 +28,8 @@ M.lookahead_distance = 150
 
 M.tick = 0
 
+local micServer = nil
+
 local function computeDistSquared(x1, y1, z1, x2, y2, z2)
     local dx = x1 - x2
     local dy = y1 - y2
@@ -83,26 +85,26 @@ end
 
 local function loadRally(mission)
     local file = readJsonFile('art/sounds/' .. mission.id .. '/pacenotes.json')
-    if not file then return end
+    if file then
+        M.mode = "rally"
+
+        M.checkpoints_array = file[1]
+        M.pacenotes_data = file[2]
+
+        resetRally()
+    else
+        M.mode = "recce"
+    end
 
     M.missionHandle = mission
-
-    M.mode = "rally"
-
-    M.checkpoints_array = file[1]
-    M.pacenotes_data = file[2]
-
-    resetRally()
+    M.serverUpdateMission()
 end
 
 local function cleanup()
     print('closing rally')
     M.mode = "none"
     M.missionHandle = nil
-end
-
-local function test()
-    print('hello from pacenotes')
+    M.serverCloseMission()
 end
 
 local function onAnyMissionChanged(started, mission, userSettings)
@@ -114,17 +116,42 @@ local function onAnyMissionChanged(started, mission, userSettings)
     end
 end
 
+local function onScenarioChange(scenario)
+    if not scenario then
+        cleanup()
+        return
+    end
+
+    M.debugHandle = scenario
+
+    local resource_path = scenario.sourceFile:sub(1, -6) -- remove .json from the source file
+
+    -- don't reset the scenario if it's already loaded
+    if M.missionHandle and resource_path == M.missionHandle.id then return end
+
+    print('rally scenario path: ' .. resource_path)
+
+    M.missionHandle = {
+        fakeMission = true,
+        id = resource_path
+    }
+
+    loadRally(M.missionHandle)
+end
+
 local function updateRally(dt)
     if M.mode ~= "rally" then return end
-
-    local my_veh = be:getPlayerVehicle(0)
-    if my_veh == nil then return end
 
     M.tick = M.tick + dt
 
     if M.tick < 0.1 then return end
 
     M.tick = M.tick - 0.1
+
+    if M.missionHandle == nil then return end
+
+    local my_veh = be:getPlayerVehicle(0)
+    if my_veh == nil then return end
 
     local position = my_veh:getPosition()
     local shortest_distance = math.huge
@@ -179,32 +206,53 @@ local function onUpdate(dt)
     updateAudioQueue(dt)
 end
 
-local function onScenarioChange(scenario)
-    if not scenario then
-        cleanup()
-        return
+local function connectToMicServer()
+    M.micServer = assert(socket.tcp())
+    local result = M.micServer:connect('127.0.0.1', 43434)
+    if not result then
+        M.micServer = nil
+        print('couldn\'t connect to server')
     end
+    print('connected to server')
 
-    M.debugHandle = scenario
-
-    local resource_path = scenario.sourceFile:sub(1, -6) -- remove .json from the source file
-
-    -- don't reset the scenario if it's already loaded
-    if M.missionHandle and resource_path == M.missionHandle.id then return end
-
-    print('rally scenario path: ' .. resource_path)
-
-    M.missionHandle = {
-        fakeMission = true,
-        id = resource_path
-    }
-
-    loadRally(M.missionHandle)
+    if M.missionHandle ~= nil then
+        M.serverUpdateMission()
+    end
 end
 
-M.test = test
+local function serverUpdateMission()
+    if M.micServer ~= nil then
+        M.micServer:send('mission ' .. M.missionHandle.id)
+    end
+end
+
+local function serverCloseMission()
+    if M.micServer ~= nil then
+        M.micServer:send('mission_end')
+    end
+end
+
+local function handleStartRecording()
+    print('start rec')
+    if M.micServer ~= nil then
+        M.micServer:send('record_start')
+    end
+end
+
+local function handleStopRecording()
+    print('stop rec')
+    if M.micServer ~= nil then
+        M.micServer:send('record_stop')
+    end
+end
+
 M.onAnyMissionChanged = onAnyMissionChanged
 M.onUpdate = onUpdate
 M.onScenarioChange = onScenarioChange
+M.connectToMicServer = connectToMicServer
+M.serverCloseMission = serverCloseMission
+M.serverUpdateMission = serverUpdateMission
+M.handleStartRecording = handleStartRecording
+M.handleStopRecording = handleStopRecording
 
 return M
