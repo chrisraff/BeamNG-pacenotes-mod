@@ -1,0 +1,23 @@
+
+<div class="pacenotes-editor" ng-init="onDocumentReady()">
+    <style>
+        .pacenotes-editor * {
+            color: white;
+            font-weight: bold;
+        }
+
+        .pacenotes-editor button {
+            color: black;
+        }
+    </style>
+
+    <p>
+        Rally ID: <span id="rally-id"></span>
+    </p>
+    <p>
+        Mode: 
+        <span id="rally-mode"></span>
+    </p>
+
+    <button ng-click="connectToMicServer()">Connect to mic server</button>
+</div>

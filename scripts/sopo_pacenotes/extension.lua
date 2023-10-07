@@ -98,6 +98,7 @@ local function loadRally(mission)
 
     M.missionHandle = mission
     M.serverUpdateMission()
+    M.guiSendMissionData()
 end
 
 local function cleanup()
@@ -105,6 +106,7 @@ local function cleanup()
     M.mode = "none"
     M.missionHandle = nil
     M.serverCloseMission()
+    M.guiSendMissionData()
 end
 
 local function onAnyMissionChanged(started, mission, userSettings)
@@ -206,6 +208,8 @@ local function onUpdate(dt)
     updateAudioQueue(dt)
 end
 
+-- server functions
+
 local function connectToMicServer()
     M.micServer = assert(socket.tcp())
     local result = M.micServer:connect('127.0.0.1', 43434)
@@ -246,6 +250,18 @@ local function handleStopRecording()
     end
 end
 
+-- gui functions
+
+local function guiSendMissionData()
+    local mission_id = ''
+    if M.missionHandle then mission_id = M.missionHandle.id end
+    guihooks.trigger('RallyDataUpdate', {mode=M.mode, mission_id=mission_id})
+end
+
+local function guiInit()
+    M.guiSendMissionData()
+end
+
 M.onAnyMissionChanged = onAnyMissionChanged
 M.onUpdate = onUpdate
 M.onScenarioChange = onScenarioChange
@@ -254,5 +270,7 @@ M.serverCloseMission = serverCloseMission
 M.serverUpdateMission = serverUpdateMission
 M.handleStartRecording = handleStartRecording
 M.handleStopRecording = handleStopRecording
+M.guiSendMissionData = guiSendMissionData
+M.guiInit = guiInit
 
 return M
