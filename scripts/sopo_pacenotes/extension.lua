@@ -84,7 +84,7 @@ local function resetRally()
 end
 
 local function loadRally(mission)
-    local file = readJsonFile('art/sounds/' .. mission.id .. '/pacenotes.json')
+    local file = jsonReadFile('art/sounds/' .. mission.id .. '/pacenotes.json')
     if file then
         M.mode = "rally"
 

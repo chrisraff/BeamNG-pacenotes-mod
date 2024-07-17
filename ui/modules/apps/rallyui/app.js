@@ -12,11 +12,11 @@ angular.module('beamng.apps')
       });
 
       scope.connectToMicServer = function () {
-        bngApi.engineLua('scripts_sopo__pacenotes_extension.connectToMicServer()')
+        bngApi.engineLua('extensions.scripts_sopo__pacenotes_extension.connectToMicServer()')
       }
 
       $timeout(function () {
-        bngApi.engineLua('scripts_sopo__pacenotes_extension.guiInit()');
+        bngApi.engineLua('extensions.scripts_sopo__pacenotes_extension.guiInit()');
       }, 0);
     }
   };

@@ -2,4 +2,5 @@
 -- If a copy of the bCDDL was not distributed with this
 -- file, You can obtain one at http://beamng.com/bCDDL-1.1.txt
 
-registerCoreModule('scripts/sopo_pacenotes/extension')
+load('scripts/sopo_pacenotes/extension')
+setExtensionUnloadMode('scripts/sopo_pacenotes/extension', "manual")
