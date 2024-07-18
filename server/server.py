@@ -6,7 +6,7 @@ import wave
 from pathlib import Path
 
 mission_path = None
-output_path = Path('C:/Users/raffc/AppData/Local/BeamNG.drive/0.30/art/sounds/')
+output_path = Path('C:/Users/raffc/AppData/Local/BeamNG.drive/0.32/art/sounds/')
 pacenotes_path = Path('pacenotes')
 
 # Initialize PyAudio
@@ -126,6 +126,21 @@ while True:
 
             elif parts[0] == 'mission_end':
                 mission_path = None
+
+            elif parts[0] == 'delete_last_pacenote':
+                if mission_path is None:
+                    continue
+
+                # delete the last pacenote
+                full_path = output_path / mission_path / pacenotes_path / f'pacenote_{i}.wav'
+                if full_path.exists():
+                    full_path.unlink()
+                    i -= 1
+
+                # confirm
+                audio_thread = threading.Thread(target=playWf, args=(wf_confirm,) )
+                audio_thread.daemon = True
+                audio_thread.start()
 
     except Exception as e:
         print("Error:", e)

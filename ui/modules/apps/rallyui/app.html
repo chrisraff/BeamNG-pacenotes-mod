@@ -9,6 +9,10 @@
         .pacenotes-editor button {
             color: black;
         }
+
+        .pacenotes-editor .hide {
+            display: none;
+        }
     </style>
 
     <p>
@@ -19,5 +23,9 @@
         <span id="rally-mode"></span>
     </p>
 
-    <button ng-click="connectToMicServer()">Connect to mic server</button>
+    <button id="connect-to-mic-server" ng-click="connectToMicServer()">Connect to Mic Server</button>
+    <!-- <button id="start-recce" ng-click="startRecce()" class="hide">Recce</button> -->
+    <div id="recce-content" class="hide">
+        <button id="" ng-click="deleteLastNote()" class="hide">Delete Last Pacenote</button>
+    </div>
 </div>

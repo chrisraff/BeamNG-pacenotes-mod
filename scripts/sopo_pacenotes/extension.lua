@@ -28,7 +28,13 @@ M.lookahead_distance = 150
 
 M.tick = 0
 
+M.logTag = "sopo_pacenotes.extension"
+
 local micServer = nil
+
+local function onExtensionLoaded()
+    log('I', M.logTag, '>>>>>>>>>>>>>>>>>>>>> onExtensionLoaded from sopo ext')
+end
 
 local function computeDistSquared(x1, y1, z1, x2, y2, z2)
     local dx = x1 - x2
@@ -45,7 +51,7 @@ local function queueUpUntil(lookahead_target)
                 file = 'art/sounds/' .. M.missionHandle.id .. '/pacenotes/pacenote_' .. i-1 .. '.wav'
             }
             table.insert(M.audioQueue, newSound)
-            print('queing note ' .. i)
+            log('I', M.logTag, 'queing note ' .. i)
         end
     end
     M.distance_of_last_queued_note = math.max(lookahead_target, M.distance_of_last_queued_note)
@@ -58,7 +64,7 @@ local function clearQueue()
 end
 
 local function resetRally()
-    print('resetRally called')
+    log('I', M.logTag, 'resetRally called')
     local my_veh = be:getPlayerVehicle(0)
     if my_veh == nil then return end
 
@@ -93,6 +99,7 @@ local function loadRally(mission)
 
         resetRally()
     else
+        -- if we don't have a file but we're in a mission, then we're in recce mode
         M.mode = "recce"
     end
 
@@ -102,7 +109,7 @@ local function loadRally(mission)
 end
 
 local function cleanup()
-    print('closing rally')
+    log('I', M.logTag, 'closing rally')
     M.mode = "none"
     M.missionHandle = nil
     M.serverCloseMission()
@@ -110,8 +117,9 @@ local function cleanup()
 end
 
 local function onAnyMissionChanged(started, mission, userSettings)
+    log('I', M.logTag, 'onAnyMissionChanged: ' .. started)
     if started == "started" then
-        print('starting rally')
+        log('I', M.logTag, 'starting rally')
         loadRally(mission)
     elseif started == "stopped" then
         cleanup()
@@ -131,7 +139,7 @@ local function onScenarioChange(scenario)
     -- don't reset the scenario if it's already loaded
     if M.missionHandle and resource_path == M.missionHandle.id then return end
 
-    print('rally scenario path: ' .. resource_path)
+    log('I', M.logTag, 'rally scenario path: ' .. resource_path)
 
     M.missionHandle = {
         fakeMission = true,
@@ -211,13 +219,19 @@ end
 -- server functions
 
 local function connectToMicServer()
+    if M.micServer ~= nil then
+        log('I', M.logTag, 'already connected to server')
+    end
+
     M.micServer = assert(socket.tcp())
     local result = M.micServer:connect('127.0.0.1', 43434)
     if not result then
         M.micServer = nil
-        print('couldn\'t connect to server')
+        log('I', M.logTag, 'couldn\'t connect to server')
     end
-    print('connected to server')
+    log('I', M.logTag, 'connected to server')
+
+    M.guiSendMicData()
 
     if M.missionHandle ~= nil then
         M.serverUpdateMission()
@@ -236,15 +250,22 @@ local function serverCloseMission()
     end
 end
 
-local function handleStartRecording()
-    print('start rec')
+local function serverDeleteLastPacenote()
     if M.micServer ~= nil then
+        M.micServer:send('delete_last_pacenote')
+    end
+end
+
+local function handleStartRecording()
+    log('I', M.logTag, 'start rec')
+    -- if we're connected and in recce mode, then we can start recording
+    if M.micServer ~= nil and M.mode == "recce" then
         M.micServer:send('record_start')
     end
 end
 
 local function handleStopRecording()
-    print('stop rec')
+    log('I', M.logTag, 'stop rec')
     if M.micServer ~= nil then
         M.micServer:send('record_stop')
     end
@@ -253,24 +274,34 @@ end
 -- gui functions
 
 local function guiSendMissionData()
+    log('I', M.logTag, 'sending gui data')
     local mission_id = ''
     if M.missionHandle then mission_id = M.missionHandle.id end
-    guihooks.trigger('RallyDataUpdate', {mode=M.mode, mission_id=mission_id})
+    guihooks.trigger('MissionDataUpdate', {mode=M.mode, mission_id=mission_id})
+end
+
+local function guiSendMicData()
+    log('I', M.logTag, 'sending mic data')
+    guihooks.trigger('MicDataUpdate', {connected=M.micServer ~= nil})
 end
 
 local function guiInit()
     M.guiSendMissionData()
+    M.guiSendMicData()
 end
 
+M.onExtensionLoaded = onExtensionLoaded
 M.onAnyMissionChanged = onAnyMissionChanged
 M.onUpdate = onUpdate
 M.onScenarioChange = onScenarioChange
 M.connectToMicServer = connectToMicServer
 M.serverCloseMission = serverCloseMission
 M.serverUpdateMission = serverUpdateMission
+M.serverDeleteLastPacenote = serverDeleteLastPacenote
 M.handleStartRecording = handleStartRecording
 M.handleStopRecording = handleStopRecording
 M.guiSendMissionData = guiSendMissionData
+M.guiSendMicData = guiSendMicData
 M.guiInit = guiInit
 
 return M
