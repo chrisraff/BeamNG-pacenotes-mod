@@ -1,7 +1,7 @@
 
 <div class="pacenotes-editor" ng-init="onDocumentReady()">
     <style>
-        .pacenotes-editor * {
+        .pacenotes-editor {
             color: white;
             font-weight: bold;
         }
@@ -13,20 +13,44 @@
         .pacenotes-editor .hide {
             display: none;
         }
+
+        .pacenotes-editor summary {
+            background-color: rgba(0, 0, 0, 0.5);
+        }
     </style>
 
-    <p>
-        Rally ID: <span id="rally-id"></span>
-    </p>
-    <p>
-        Mode: 
-        <span id="rally-mode"></span>
-    </p>
+    <details open>
+        <summary>Pacenotes</summary>
 
-    <button id="connect-to-mic-server" ng-click="connectToMicServer()">Connect to Mic Server</button>
-    <!-- <button id="start-recce" ng-click="startRecce()" class="hide">Recce</button> -->
-    <div id="recce-content" class="hide">
-        <button id="save-recce" ng-click="saveRecce()">Save Recce</button>
-        <button id="" ng-click="deleteLastPacenote()" class="hide">Delete Last Pacenote</button>
-    </div>
+        <p>
+            Rally ID: <span id="rally-id"></span>
+        </p>
+        <p>
+            Mode:
+            <span id="rally-mode"></span>
+        </p>
+
+        <p>
+            Playback Lookahead:
+            <input type="number" id="playback-lookahead" ng-model="playbackLookahead">
+        </p>
+        <p>
+            Speed Multiplier:
+            <input type="number" id="speed-multiplier" ng-model="speedMultiplier">
+        </p>
+
+        <button id="connect-to-mic-server" ng-click="connectToMicServer()">Connect to Mic Server</button>
+        <div id="recce-content" class="hide">
+            <button id="recce-save" ng-click="setSaveRecce()">Save Recce</button>
+            <button id="" ng-click="deleteLastPacenote()" class="hide">Delete Last Pacenote</button>
+
+            <p>
+                Distance: <span id="distance"></span>
+            </p>
+            <p>
+                Number of Pacenotes: <span id="pacenotes-count"></span>
+            </p>
+        </div>
+    </details>
+
 </div>

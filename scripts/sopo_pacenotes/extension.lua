@@ -14,7 +14,11 @@ M.settings = {
     sound_data = {
         volume = 10
     },
-    reset_threshold = 10
+    reset_threshold = 10,
+    pacenote_playback = {
+        lookahead_distance_base = 100,
+        speed_multiplier = 5
+    }
 }
 
 M.checkpoints_array = nil
@@ -30,13 +34,13 @@ M.last_position = vec3(0, 0, 0)
 
 M.audioQueue = {}
 
-M.lookahead_distance = 150
-
 -- Recording variables
 M.checkpointResolution = 2 -- meters between stage checkpoints
 M.checkpointMaxEcc = 10 -- prevent adding a checkpoint in a restart
 
 M.recordingDistance = 0
+
+M.savingRecce = false
 
 M.logTag = "sopo_pacenotes.extension"
 
@@ -223,7 +227,17 @@ local function updateRally(dt)
 
     M.last_position = position
 
-    queueUpUntil(M.checkpoints_array[M.checkpoint_index][4] + M.lookahead_distance)
+    local vel = my_veh:getVelocity()
+    local speedAlongTrack = 0
+
+    local checkpoint = M.checkpoints_array[M.checkpoint_index]
+    if (M.checkpoint_index + 1) <= #M.checkpoints_array then
+        local nextCheckpoint = M.checkpoints_array[M.checkpoint_index + 1]
+        local checkpointDirection = vec3(nextCheckpoint[1] - checkpoint[1], nextCheckpoint[2] - checkpoint[2], nextCheckpoint[3] - checkpoint[3]):normalized()
+        speedAlongTrack = vel:dot(checkpointDirection)
+    end
+
+    queueUpUntil(checkpoint[4] + M.settings.pacenote_playback.lookahead_distance_base + speedAlongTrack * M.settings.pacenote_playback.speed_multiplier)
 end
 
 local function updateAudioQueue(dt)
@@ -295,6 +309,8 @@ local function updateRecce(dt)
         local newPoint = {position.x, position.y, position.z, newD}
         table.insert(M.checkpoints_array, newPoint) -- Append new_point to checkpoints_array
     end
+
+    M.guiSendRecceData()
 end
 
 local function saveRecce()
@@ -325,6 +341,7 @@ local function connectToMicServer()
     end
 
     M.micServer = assert(socket.tcp())
+    M.micServer:settimeout(2) -- 2 second timeout
     local result = M.micServer:connect('127.0.0.1', 43434)
     if not result then
         M.micServer = nil
@@ -387,6 +404,10 @@ local function handleStopRecording()
     }
 
     table.insert(M.pacenotes_data, newNote)
+
+    if M.savingRecce then
+        M.saveRecce()
+    end
 end
 
 -- gui functions
@@ -395,12 +416,26 @@ local function guiSendMissionData()
     log('I', M.logTag, 'sending gui data')
     local mission_id = ''
     if M.scenarioPath then mission_id = M.scenarioPath end
-    guihooks.trigger('MissionDataUpdate', {mode=M.mode, mission_id=mission_id})
+    data = {
+        mode=M.mode,
+        mission_id=mission_id,
+        playback_lookahead=M.settings.pacenote_playback.lookahead_distance_base,
+        speed_multiplier=M.settings.pacenote_playback.speed_multiplier
+    }
+    guihooks.trigger('MissionDataUpdate', data)
 end
 
 local function guiSendMicData()
     log('I', M.logTag, 'sending mic data')
     guihooks.trigger('MicDataUpdate', {connected=M.micServer ~= nil})
+end
+
+local function guiSendRecceData()
+    local lastCheckpoint = M.checkpoints_array[#M.checkpoints_array]
+    if lastCheckpoint == nil then
+        lastCheckpoint = {0, 0, 0, 0}
+    end
+    guihooks.trigger('RecceDataUpdate', {distance=lastCheckpoint[4], pacenoteNumber=#M.pacenotes_data})
 end
 
 local function guiInit()
@@ -423,6 +458,7 @@ M.handleStartRecording = handleStartRecording
 M.handleStopRecording = handleStopRecording
 M.guiSendMissionData = guiSendMissionData
 M.guiSendMicData = guiSendMicData
+M.guiSendRecceData = guiSendRecceData
 M.guiInit = guiInit
 
 return M
