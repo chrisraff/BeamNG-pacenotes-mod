@@ -104,6 +104,7 @@ local function resetRecce()
     M.checkpoints_array = {}
     M.pacenotes_data = {}
     M.recordingDistance = 0
+    M.serverResetCount()
 end
 
 local function loadRally()
@@ -356,11 +357,21 @@ local function serverDeleteLastPacenote()
     end
 end
 
+local function serverResetCount(i)
+    if M.micServer ~= nil then
+        i = i or 0
+        M.micServer:send('reset_count ' .. i)
+    end
+end
+
 local function handleStartRecording()
     log('I', M.logTag, 'start rec')
     -- if we're connected and in recce mode, then we can start recording
     if M.micServer ~= nil and M.mode == "recce" then
         M.micServer:send('record_start')
+
+        local lastCheckpoint = M.checkpoints_array[#M.checkpoints_array]
+        M.recordingDistance = lastCheckpoint[4]
     end
 end
 
@@ -369,6 +380,13 @@ local function handleStopRecording()
     if M.micServer ~= nil then
         M.micServer:send('record_stop')
     end
+
+    local newNote = {
+        d = M.recordingDistance,
+        wave_name = 'pacenote_' .. #M.pacenotes_data .. '.wav'
+    }
+
+    table.insert(M.pacenotes_data, newNote)
 end
 
 -- gui functions
@@ -400,6 +418,7 @@ M.connectToMicServer = connectToMicServer
 M.serverCloseMission = serverCloseMission
 M.serverUpdateMission = serverUpdateMission
 M.serverDeleteLastPacenote = serverDeleteLastPacenote
+M.serverResetCount = serverResetCount
 M.handleStartRecording = handleStartRecording
 M.handleStopRecording = handleStopRecording
 M.guiSendMissionData = guiSendMissionData

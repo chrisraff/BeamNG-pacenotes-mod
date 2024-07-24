@@ -142,6 +142,21 @@ while True:
                 audio_thread.daemon = True
                 audio_thread.start()
 
+            elif parts[0] == 'set_i':
+                print("Setting i")
+
+                # if parts[1] exists, set i to that value
+                if len(parts) > 1:
+                    # check that it's a valid integer
+                    try:
+                        i = int(parts[1]) - 1
+                    except ValueError:
+                        i = -1  # Set a default value
+                        print("Invalid value for i. Setting i to 0.")
+                else:
+
+                    i = -1
+
     except Exception as e:
         print("Error:", e)
     finally:
