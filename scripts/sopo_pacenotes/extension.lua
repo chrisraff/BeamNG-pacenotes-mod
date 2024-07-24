@@ -58,7 +58,7 @@ local function queueUpUntil(lookahead_target)
         if note.d > M.distance_of_last_queued_note and note.d < lookahead_target then
             local newSound = {
                 played = false,
-                file = 'art/sounds/' .. M.scenarioPath .. '/pacenotes/pacenote_' .. i-1 .. '.wav'
+                file = 'art/sounds/' .. M.scenarioPath .. '/pacenotes/' .. note.wave_name
             }
             table.insert(M.audioQueue, newSound)
             log('I', M.logTag, 'queing note ' .. i)
