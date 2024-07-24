@@ -11,13 +11,14 @@ M.mode = "none"
 M.uiState = "none"
 
 M.settings = {
+    settingsVersion = 0,
     sound_data = {
         volume = 10
     },
     reset_threshold = 10,
     pacenote_playback = {
-        lookahead_distance_base = 100,
-        speed_multiplier = 5
+        lookahead_distance_base = 60,
+        speed_multiplier = 3
     }
 }
 
@@ -48,6 +49,12 @@ local micServer = nil
 
 local function onExtensionLoaded()
     log('I', M.logTag, '>>>>>>>>>>>>>>>>>>>>> onExtensionLoaded from sopo ext')
+
+    -- load the settings
+    local settingsFile = jsonReadFile('settings/sopo_pacenotes/settings.json')
+    if settingsFile and settingsFile.settingsVersion == 0 then
+        M.settings = settingsFile
+    end
 end
 
 local function computeDistSquared(x1, y1, z1, x2, y2, z2)
@@ -191,6 +198,9 @@ end
 local function onUiChangedState(curUIState, prevUIState)
     log('I', M.logTag, 'ui changed state: ' .. curUIState .. ', ' .. prevUIState)
     M.uiState = curUIState
+
+    -- save the settings
+    jsonWriteFile('settings/sopo_pacenotes/settings.json', M.settings)
 end
 
 local function updateRally(dt)
