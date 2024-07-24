@@ -4,7 +4,9 @@
 
 local M = {}
 
-M.missionHandle = nil
+
+M.scenarioHandle = nil
+M.scenarioPath = nil
 M.mode = "none"
 M.uiState = "none"
 
@@ -56,7 +58,7 @@ local function queueUpUntil(lookahead_target)
         if note.d > M.distance_of_last_queued_note and note.d < lookahead_target then
             local newSound = {
                 played = false,
-                file = 'art/sounds/' .. M.missionHandle.id .. '/pacenotes/pacenote_' .. i-1 .. '.wav'
+                file = 'art/sounds/' .. M.scenarioPath .. '/pacenotes/pacenote_' .. i-1 .. '.wav'
             }
             table.insert(M.audioQueue, newSound)
             log('I', M.logTag, 'queing note ' .. i)
@@ -104,8 +106,8 @@ local function resetRecce()
     M.recordingDistance = 0
 end
 
-local function loadRally(mission)
-    local file = jsonReadFile('art/sounds/' .. mission.id .. '/pacenotes.json')
+local function loadRally()
+    local file = jsonReadFile('art/sounds/' .. M.scenarioPath .. '/pacenotes.json')
     if file then
         M.mode = "rally"
 
@@ -119,17 +121,46 @@ local function loadRally(mission)
 
         resetRecce()
     end
-
-    M.missionHandle = mission
-    M.serverUpdateMission()
-    M.guiSendMissionData()
 end
 
 local function cleanup()
     log('I', M.logTag, 'closing rally')
     M.mode = "none"
-    M.missionHandle = nil
+    M.scenarioPath = nil
+    M.scenarioHandle = nil
     M.serverCloseMission()
+    M.guiSendMissionData()
+end
+
+local function getPath(scenario)
+    if scenario.id then
+        return scenario.id
+    end
+    if scenario.sourceFile then
+        return scenario.sourceFile:sub(1, -6) -- remove .json from the source file
+    end
+    if scenario.directory and scenario.scenarioName then
+        return scenario.directory .. '/' .. scenario.scenarioName
+    end
+
+    return nil
+end
+
+local function setup(scenarioOrMission)
+    if scenarioOrMission then
+        local newPath = getPath(scenarioOrMission)
+        -- don't reset the scenario if it's already loaded
+        if M.scenarioPath == newPath then return end
+
+        log('I', M.logTag, 'rally scenario path: ' .. newPath)
+        M.scenarioHandle = scenarioOrMission
+        M.scenarioPath = getPath(scenarioOrMission)
+    end
+
+    if M.scenarioPath then
+        loadRally()
+    end
+    M.serverUpdateMission()
     M.guiSendMissionData()
 end
 
@@ -137,7 +168,7 @@ local function onAnyMissionChanged(started, mission, userSettings)
     log('I', M.logTag, 'onAnyMissionChanged: ' .. started)
     if started == "started" then
         log('I', M.logTag, 'starting rally')
-        loadRally(mission)
+        setup(mission)
     elseif started == "stopped" then
         cleanup()
     end
@@ -149,21 +180,7 @@ local function onScenarioChange(scenario)
         return
     end
 
-    M.debugHandle = scenario
-
-    local resource_path = scenario.sourceFile:sub(1, -6) -- remove .json from the source file
-
-    -- don't reset the scenario if it's already loaded
-    if M.missionHandle and resource_path == M.missionHandle.id then return end
-
-    log('I', M.logTag, 'rally scenario path: ' .. resource_path)
-
-    M.missionHandle = {
-        fakeMission = true,
-        id = resource_path
-    }
-
-    loadRally(M.missionHandle)
+    setup(scenario)
 end
 
 local function onUiChangedState(curUIState, prevUIState)
@@ -181,7 +198,7 @@ local function updateRally(dt)
 
     M.tick = M.tick - 0.1
 
-    if M.missionHandle == nil then return end
+    if M.scenarioPath == nil then return end
 
     local my_veh = be:getPlayerVehicle(0)
     if my_veh == nil then return end
@@ -244,7 +261,7 @@ local function updateRecce(dt)
 
     M.tick = M.tick - 0.1
 
-    if M.missionHandle == nil then return end
+    if M.scenarioPath == nil then return end
 
     local my_veh = be:getPlayerVehicle(0)
     if my_veh == nil then return end
@@ -282,7 +299,7 @@ end
 local function saveRecce()
     if M.mode ~= "recce" then return end
 
-    local file = jsonWriteFile('art/sounds/' .. M.missionHandle.id .. '/pacenotes.json', {M.checkpoints_array, M.pacenotes_data})
+    local file = jsonWriteFile('art/sounds/' .. M.scenarioPath .. '/pacenotes.json', {M.checkpoints_array, M.pacenotes_data})
     if file then
         log('I', M.logTag, 'saved recce data')
     else
@@ -316,14 +333,14 @@ local function connectToMicServer()
 
     M.guiSendMicData()
 
-    if M.missionHandle ~= nil then
+    if M.scenarioPath ~= nil then
         M.serverUpdateMission()
     end
 end
 
 local function serverUpdateMission()
     if M.micServer ~= nil then
-        M.micServer:send('mission ' .. M.missionHandle.id)
+        M.micServer:send('mission ' .. M.scenarioPath)
     end
 end
 
@@ -359,7 +376,7 @@ end
 local function guiSendMissionData()
     log('I', M.logTag, 'sending gui data')
     local mission_id = ''
-    if M.missionHandle then mission_id = M.missionHandle.id end
+    if M.scenarioPath then mission_id = M.scenarioPath end
     guihooks.trigger('MissionDataUpdate', {mode=M.mode, mission_id=mission_id})
 end
 
