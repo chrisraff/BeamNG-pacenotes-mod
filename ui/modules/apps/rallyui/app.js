@@ -20,6 +20,10 @@ angular.module('beamng.apps')
         bngApi.engineLua('extensions.scripts_sopo__pacenotes_extension.serverDeleteLastPacenote()');
       }
 
+      scope.saveRecce = function () {
+        bngApi.engineLua('extensions.scripts_sopo__pacenotes_extension.saveRecce()');
+      }
+
       scope.$on('MissionDataUpdate', function(event, args) {
         document.querySelector('#rally-id').innerHTML = args.mission_id;
         document.querySelector('#rally-mode').innerHTML = args.mode;

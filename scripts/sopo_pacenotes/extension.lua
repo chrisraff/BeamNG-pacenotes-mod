@@ -6,6 +6,7 @@ local M = {}
 
 M.missionHandle = nil
 M.mode = "none"
+M.uiState = "none"
 
 M.settings = {
     sound_data = {
@@ -18,6 +19,9 @@ M.checkpoints_array = nil
 M.checkpoint_index = nil
 M.pacenotes_data = nil
 
+M.tick = 0
+
+-- Playback variables
 M.last_distance = 0
 M.distance_of_last_queued_note = 0
 M.last_position = vec3(0, 0, 0)
@@ -26,7 +30,11 @@ M.audioQueue = {}
 
 M.lookahead_distance = 150
 
-M.tick = 0
+-- Recording variables
+M.checkpointResolution = 2 -- meters between stage checkpoints
+M.checkpointMaxEcc = 10 -- prevent adding a checkpoint in a restart
+
+M.recordingDistance = 0
 
 M.logTag = "sopo_pacenotes.extension"
 
@@ -89,6 +97,13 @@ local function resetRally()
     clearQueue()
 end
 
+local function resetRecce()
+    log('I', M.logTag, 'resetRecce called')
+    M.checkpoints_array = {}
+    M.pacenotes_data = {}
+    M.recordingDistance = 0
+end
+
 local function loadRally(mission)
     local file = jsonReadFile('art/sounds/' .. mission.id .. '/pacenotes.json')
     if file then
@@ -101,6 +116,8 @@ local function loadRally(mission)
     else
         -- if we don't have a file but we're in a mission, then we're in recce mode
         M.mode = "recce"
+
+        resetRecce()
     end
 
     M.missionHandle = mission
@@ -149,11 +166,17 @@ local function onScenarioChange(scenario)
     loadRally(M.missionHandle)
 end
 
+local function onUiChangedState(curUIState, prevUIState)
+    log('I', M.logTag, 'ui changed state: ' .. curUIState .. ', ' .. prevUIState)
+    M.uiState = curUIState
+end
+
 local function updateRally(dt)
     if M.mode ~= "rally" then return end
 
     M.tick = M.tick + dt
 
+    -- only preform logic at 10hz
     if M.tick < 0.1 then return end
 
     M.tick = M.tick - 0.1
@@ -166,7 +189,7 @@ local function updateRally(dt)
     local position = my_veh:getPosition()
     local shortest_distance = math.huge
 
-    if computeDistSquared(position.x, position.y, position.z, M.last_position.x, M.last_position.y, M.last_position.z) > M.settings.reset_threshold * M.settings.reset_threshold then
+    if computeDistSquared(position.x, position.y, position.z, M.last_position.x, M.last_position.y, M.last_position.z) > M.settings.reset_threshold^2 then
         resetRally()
     else
         -- check the surrounding
@@ -211,8 +234,68 @@ local function updateAudioQueue(dt)
     end
 end
 
+local function updateRecce(dt)
+    if M.mode ~= "recce" then return end
+
+    M.tick = M.tick + dt
+
+    -- only preform logic at 10hz
+    if M.tick < 0.1 then return end
+
+    M.tick = M.tick - 0.1
+
+    if M.missionHandle == nil then return end
+
+    local my_veh = be:getPlayerVehicle(0)
+    if my_veh == nil then return end
+
+    local position = my_veh:getPosition()
+
+    -- if we haven't recorded any checkpoints yet, set the distance so we will trigger a recording
+    local distance2FromLast = math.huge
+
+    -- see if we need to record a new checkpoint
+    if #M.checkpoints_array > 0 then
+        local lastCheckpoint = M.checkpoints_array[#M.checkpoints_array]
+        distance2FromLast = computeDistSquared(lastCheckpoint[1], lastCheckpoint[2], lastCheckpoint[3], position.x, position.y, position.z)
+    end
+
+    if M.debug.printTick then
+        log('I', M.logTag, 'distance2FromLast: ' .. distance2FromLast .. ', ' .. M.checkpointResolution^2)
+    end
+
+    if distance2FromLast >= M.checkpointResolution^2 and (distance2FromLast < M.checkpointMaxEcc^2 or distance2FromLast == math.huge) and M.uiState == "play" then
+        -- record the checkpoint
+        local newD = 0
+        if #M.checkpoints_array > 0 then
+            local lastCheckpoint = M.checkpoints_array[#M.checkpoints_array]
+            newD = lastCheckpoint[4] + math.sqrt(distance2FromLast)
+        end
+
+        log('I', M.logTag, '>> recording checkpoint at ' .. position.x .. ', ' .. position.y .. ', ' .. position.z .. ' with d ' .. newD)
+
+        local newPoint = {position.x, position.y, position.z, newD}
+        table.insert(M.checkpoints_array, newPoint) -- Append new_point to checkpoints_array
+    end
+end
+
+local function saveRecce()
+    if M.mode ~= "recce" then return end
+
+    local file = jsonWriteFile('art/sounds/' .. M.missionHandle.id .. '/pacenotes.json', {M.checkpoints_array, M.pacenotes_data})
+    if file then
+        log('I', M.logTag, 'saved recce data')
+    else
+        log('E', M.logTag, 'failed to save recce data')
+    end
+end
+
 local function onUpdate(dt)
-    updateRally(dt)
+    if M.mode == "rally" then
+        updateRally(dt)
+    elseif M.mode == "recce" then
+        updateRecce(dt)
+    end
     updateAudioQueue(dt)
 end
 
@@ -292,6 +375,8 @@ end
 
 M.onExtensionLoaded = onExtensionLoaded
 M.onAnyMissionChanged = onAnyMissionChanged
+M.onUiChangedState = onUiChangedState
+M.saveRecce = saveRecce
 M.onUpdate = onUpdate
 M.onScenarioChange = onScenarioChange
 M.connectToMicServer = connectToMicServer
