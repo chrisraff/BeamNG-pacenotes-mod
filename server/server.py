@@ -142,7 +142,7 @@ while True:
                 audio_thread.daemon = True
                 audio_thread.start()
 
-            elif parts[0] == 'set_i':
+            elif parts[0] == 'reset_count':
                 print("Setting i")
 
                 # if parts[1] exists, set i to that value
@@ -157,6 +157,7 @@ while True:
 
                     i = -1
 
+                print(f"i is now {i}")
     except Exception as e:
         print("Error:", e)
     finally:
