@@ -17,6 +17,28 @@
         .pacenotes-editor summary {
             background-color: rgba(0, 0, 0, 0.5);
         }
+
+        /* TODO switch to flexboxes so table height can be smarter */
+        #pacenotes-list {
+            max-height: 100px;
+            overflow-y: auto;
+        }
+
+        .pacenotes-editor table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .pacenotes-editor th, .pacenotes-editor td {
+            border: 1px solid white;
+            padding: 8px;
+            text-align: left;
+            background-color: rgba(0, 0, 0, 0.2);
+        }
+
+        .pacenotes-editor th {
+            background-color: rgba(0, 0, 0, 0.4);
+        }
     </style>
 
     <details open>
@@ -50,6 +72,23 @@
             <p>
                 Number of Pacenotes: <span id="pacenotes-count"></span>
             </p>
+        </div>
+
+        <div id="pacenotes-list" class="hide">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>D</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr ng-repeat="pacenote in pacenotes_data">
+                        <td>{{pacenote.name || pacenote.wave_name}}</td>
+                        <td>{{pacenote.d}}</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </details>
 

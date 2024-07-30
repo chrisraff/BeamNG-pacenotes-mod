@@ -208,7 +208,7 @@ local function updateRally(dt)
 
     M.tick = M.tick + dt
 
-    -- only preform logic at 10hz
+    -- only perform logic at 10hz
     if M.tick < 0.1 then return end
 
     M.tick = M.tick - 0.1
@@ -281,7 +281,7 @@ local function updateRecce(dt)
 
     M.tick = M.tick + dt
 
-    -- only preform logic at 10hz
+    -- only perform logic at 10hz
     if M.tick < 0.1 then return end
 
     M.tick = M.tick - 0.1
@@ -426,13 +426,15 @@ local function guiSendMissionData()
     log('I', M.logTag, 'sending gui data')
     local mission_id = ''
     if M.scenarioPath then mission_id = M.scenarioPath end
-    data = {
+    local data = {
         mode=M.mode,
         mission_id=mission_id,
         playback_lookahead=M.settings.pacenote_playback.lookahead_distance_base,
         speed_multiplier=M.settings.pacenote_playback.speed_multiplier
     }
     guihooks.trigger('MissionDataUpdate', data)
+
+    M.guiSendPacenoteData()
 end
 
 local function guiSendMicData()
@@ -446,6 +448,10 @@ local function guiSendRecceData()
         lastCheckpoint = {0, 0, 0, 0}
     end
     guihooks.trigger('RecceDataUpdate', {distance=lastCheckpoint[4], pacenoteNumber=#M.pacenotes_data})
+end
+
+local function guiSendPacenoteData()
+    guihooks.trigger('PacenoteDataUpdate', {pacenotes_data = M.pacenotes_data})
 end
 
 local function guiInit()
@@ -469,6 +475,7 @@ M.handleStopRecording = handleStopRecording
 M.guiSendMissionData = guiSendMissionData
 M.guiSendMicData = guiSendMicData
 M.guiSendRecceData = guiSendRecceData
+M.guiSendPacenoteData = guiSendPacenoteData
 M.guiInit = guiInit
 
 return M

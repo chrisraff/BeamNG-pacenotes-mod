@@ -6,6 +6,8 @@ angular.module('beamng.apps')
     restrict: 'EA',
     link: function (scope, element, attrs) {
 
+      scope.pacenotes_data = {};
+
       scope.updateMicConnection = function (connected) {
         const button = document.querySelector('#connect-to-mic-server');
         button.disabled = connected;
@@ -61,6 +63,10 @@ angular.module('beamng.apps')
       scope.$on('RecceDataUpdate', function(event, args) {
         document.querySelector('#distance').innerHTML = args.distance;
         document.querySelector('#pacenotes-count').innerHTML = args.pacenoteNumber;
+      });
+
+      scope.$on('PacenoteDataUpdate', function(event, args) {
+        scope.pacenotes_data = args.pacenotes_data;
       });
 
       $timeout(function () {
