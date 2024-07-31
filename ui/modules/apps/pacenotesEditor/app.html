@@ -34,6 +34,7 @@
             padding: 8px;
             text-align: left;
             background-color: rgba(0, 0, 0, 0.2);
+            font-size: 80%;
         }
 
         .pacenotes-editor th {
@@ -78,7 +79,7 @@
             </p>
         </div>
 
-        <div id="pacenotes-list" class="hide">
+        <div id="pacenotes-list" ng-show="pacenotes_data != {}">
             <table>
                 <thead>
                     <tr>
@@ -97,10 +98,10 @@
 
         <div id="selected-row-details" ng-show="selectedRowIndex !== null">
             <label for="name">Name:</label>
-            <input type="text" id="name" ng-model="pacenotes_data[selectedRowIndex].name" placeholder="{{pacenotes_data[selectedRowIndex].wave_name}}">
+            <input type="text" ng-model="pacenotes_data[selectedRowIndex].name" ng-model-options="{ updateOn: 'blur keydown', debounce: {'blur': 0, 'keydown': 500} }" placeholder="{{pacenotes_data[selectedRowIndex].wave_name }}">
 
             <label for="distance">Distance:</label>
-            <input type="number" id="distance" ng-model="pacenotes_data[selectedRowIndex].d">
+            <input type="number" ng-model="pacenotes_data[selectedRowIndex].d" ng-model-options="{ updateOn: 'blur keydown', debounce: {'blur': 0, 'keydown': 500} }" >
 
             <button id="delete-pacenote" ng-click="deletePacenote()">Delete Pacenote</button>
         </div>

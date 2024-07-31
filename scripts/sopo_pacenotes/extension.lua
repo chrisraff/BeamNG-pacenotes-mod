@@ -72,6 +72,7 @@ local function queueUpUntil(lookahead_target)
                 file = 'art/sounds/' .. M.scenarioPath .. '/pacenotes/' .. note.wave_name
             }
             table.insert(M.audioQueue, newSound)
+            M.guiSendSelectedPacenote(i);
             log('I', M.logTag, 'queing note ' .. i)
         end
     end
@@ -116,6 +117,8 @@ local function resetRecce()
     M.pacenotes_data = {}
     M.recordingDistance = 0
     M.serverResetCount()
+
+    M.guiSendPacenoteData()
 end
 
 local function loadRally()
@@ -127,6 +130,8 @@ local function loadRally()
         M.pacenotes_data = file[2]
 
         resetRally()
+
+        M.guiSendPacenoteData()
     else
         -- if we don't have a file but we're in a mission, then we're in recce mode
         M.mode = "recce"
@@ -339,6 +344,8 @@ local function onUpdate(dt)
     updateAudioQueue(dt)
 end
 
+-- pacenote management
+
 local function deletePacenote(index)
     if index == nil then
         index = #M.pacenotes_data
@@ -348,6 +355,11 @@ local function deletePacenote(index)
         table.remove(M.pacenotes_data, index)
         M.guiSendPacenoteData()
     end
+end
+
+local function sortPacenotes()
+    table.sort(M.pacenotes_data, function(a, b) return a.d < b.d end)
+    M.guiSendPacenoteData()
 end
 
 -- server functions
@@ -461,6 +473,10 @@ local function guiSendPacenoteData()
     guihooks.trigger('PacenoteDataUpdate', {pacenotes_data = M.pacenotes_data})
 end
 
+local function guiSendSelectedPacenote(index)
+    guihooks.trigger('PacenoteSelected', {index=index-1})
+end
+
 local function guiInit()
     M.guiSendMissionData()
     M.guiSendMicData()
@@ -472,6 +488,7 @@ M.onUiChangedState = onUiChangedState
 M.saveRecce = saveRecce
 M.onUpdate = onUpdate
 M.deletePacenote = deletePacenote
+M.sortPacenotes = sortPacenotes
 M.onScenarioChange = onScenarioChange
 M.connectToMicServer = connectToMicServer
 M.serverCloseMission = serverCloseMission
@@ -484,6 +501,7 @@ M.guiSendMissionData = guiSendMissionData
 M.guiSendMicData = guiSendMicData
 M.guiSendRecceData = guiSendRecceData
 M.guiSendPacenoteData = guiSendPacenoteData
+M.guiSendSelectedPacenote = guiSendSelectedPacenote
 M.guiInit = guiInit
 
 return M

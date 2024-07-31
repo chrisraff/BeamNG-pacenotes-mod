@@ -11,6 +11,8 @@ angular.module('beamng.apps')
       // editor table:
       scope.selectedRowIndex = null;
 
+      let watchEnabled = true;
+
       scope.updateMicConnection = function (connected) {
         const button = document.querySelector('#connect-to-mic-server');
         button.disabled = connected;
@@ -37,12 +39,28 @@ angular.module('beamng.apps')
         }
       });
 
+      scope.$watch('pacenotes_data', function(newVal) {
+        if (newVal && watchEnabled && scope.selectedRowIndex !== null) {
+          // assume that only the current row is being edited
+          let pacenote = newVal[scope.selectedRowIndex];
+
+          // only update the appropriate values
+          bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.pacenotes_data[${scope.selectedRowIndex+1}].d = ${pacenote.d}`);
+          if (pacenote.name !== undefined)
+          {
+            bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.pacenotes_data[${scope.selectedRowIndex+1}].name = "${pacenote.name}"`);
+          }
+
+          bngApi.engineLua('extensions.scripts_sopo__pacenotes_extension.sortPacenotes()');
+        }
+      }, true); // deep watch: true
+
       scope.selectRow = function (index) {
         scope.selectedRowIndex = index;
       }
 
-      scope.deletePacenote = function (index) {
-        bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.deletePacenote(${index})`);
+      scope.deletePacenote = function () {
+        bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.deletePacenote(${scope.selectedRowIndex + 1})`);
       }
 
       scope.setSaveRecce = function () {
@@ -77,12 +95,19 @@ angular.module('beamng.apps')
       });
 
       scope.$on('PacenoteDataUpdate', function(event, args) {
+        watchEnabled = false;
         scope.pacenotes_data = args.pacenotes_data;
+        watchEnabled = true;
       });
 
-      $timeout(function () {
+      scope.$on('PacenoteSelected', function(event, args) {
+        scope.selectedRowIndex = args.index;
+        document.querySelector('#pacenotes-list tbody').children[args.index].scrollIntoViewIfNeeded();
+      });
+
+      element.ready(function () {
         bngApi.engineLua('extensions.scripts_sopo__pacenotes_extension.guiInit()');
-      }, 0);
+      });
     }
   };
 }]);
