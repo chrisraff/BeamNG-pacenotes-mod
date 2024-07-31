@@ -8,6 +8,9 @@ angular.module('beamng.apps')
 
       scope.pacenotes_data = {};
 
+      // editor table:
+      scope.selectedRowIndex = null;
+
       scope.updateMicConnection = function (connected) {
         const button = document.querySelector('#connect-to-mic-server');
         button.disabled = connected;
@@ -33,6 +36,14 @@ angular.module('beamng.apps')
           bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.settings.pacenote_playback.speed_multiplier = ${newVal}`);
         }
       });
+
+      scope.selectRow = function (index) {
+        scope.selectedRowIndex = index;
+      }
+
+      scope.deletePacenote = function (index) {
+        bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.deletePacenote(${index})`);
+      }
 
       scope.setSaveRecce = function () {
         bngApi.engineLua('extensions.scripts_sopo__pacenotes_extension.savingRecce = true');

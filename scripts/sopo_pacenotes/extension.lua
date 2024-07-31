@@ -302,10 +302,6 @@ local function updateRecce(dt)
         distance2FromLast = computeDistSquared(lastCheckpoint[1], lastCheckpoint[2], lastCheckpoint[3], position.x, position.y, position.z)
     end
 
-    if M.debug.printTick then
-        log('I', M.logTag, 'distance2FromLast: ' .. distance2FromLast .. ', ' .. M.checkpointResolution^2)
-    end
-
     if distance2FromLast >= M.checkpointResolution^2 and (distance2FromLast < M.checkpointMaxEcc^2 or distance2FromLast == math.huge) and M.uiState == "play" then
         -- record the checkpoint
         local newD = 0
@@ -341,6 +337,17 @@ local function onUpdate(dt)
         updateRecce(dt)
     end
     updateAudioQueue(dt)
+end
+
+local function deletePacenote(index)
+    if index == nil then
+        index = #M.pacenotes_data
+    end
+
+    if index > 0 then
+        table.remove(M.pacenotes_data, index)
+        M.guiSendPacenoteData()
+    end
 end
 
 -- server functions
@@ -464,6 +471,7 @@ M.onAnyMissionChanged = onAnyMissionChanged
 M.onUiChangedState = onUiChangedState
 M.saveRecce = saveRecce
 M.onUpdate = onUpdate
+M.deletePacenote = deletePacenote
 M.onScenarioChange = onScenarioChange
 M.connectToMicServer = connectToMicServer
 M.serverCloseMission = serverCloseMission
