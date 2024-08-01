@@ -328,8 +328,8 @@ local function updateRecce(dt)
     M.guiSendRecceData()
 end
 
-local function saveRecce()
-    if M.mode ~= "recce" then return end
+local function savePacenoteData()
+    if M.scenarioPath == nil then return end
 
     local file = jsonWriteFile('art/sounds/' .. M.scenarioPath .. '/pacenotes.json', {M.checkpoints_array, M.pacenotes_data})
     if file then
@@ -468,7 +468,7 @@ local function handleStopRecording()
     M.guiSendSelectedPacenote(#M.pacenotes_data)
 
     if M.savingRecce then
-        M.saveRecce()
+        M.savePacenoteData()
     end
 end
 
@@ -486,7 +486,7 @@ local function guiSendMissionData()
     }
     guihooks.trigger('MissionDataUpdate', data)
 
-    M.guiSendPacenoteData()
+    M.guiSendPacenoteData(true)
 end
 
 local function guiSendMicData()
@@ -502,8 +502,9 @@ local function guiSendRecceData()
     guihooks.trigger('RecceDataUpdate', {distance=lastCheckpoint[4], pacenoteNumber=#M.pacenotes_data})
 end
 
-local function guiSendPacenoteData()
-    guihooks.trigger('PacenoteDataUpdate', {pacenotes_data = M.pacenotes_data})
+local function guiSendPacenoteData(firstLoad)
+    local firstLoad = firstLoad or false
+    guihooks.trigger('PacenoteDataUpdate', {pacenotes_data = M.pacenotes_data, firstLoad = firstLoad})
 end
 
 local function guiSendSelectedPacenote(index)
@@ -518,7 +519,7 @@ end
 M.onExtensionLoaded = onExtensionLoaded
 M.onAnyMissionChanged = onAnyMissionChanged
 M.onUiChangedState = onUiChangedState
-M.saveRecce = saveRecce
+M.savePacenoteData = savePacenoteData
 M.onUpdate = onUpdate
 M.deletePacenote = deletePacenote
 M.sortPacenotes = sortPacenotes

@@ -8,8 +8,11 @@ angular.module('beamng.apps')
 
       scope.pacenotes_data = {};
 
+      scope.followNote = true;
+
       // editor table:
       scope.selectedRowIndex = null;
+      scope.isRallyChanged = false;
 
       let watchEnabled = true;
 
@@ -25,6 +28,11 @@ angular.module('beamng.apps')
 
       scope.deleteLastPacenote = function () {
         bngApi.engineLua('extensions.scripts_sopo__pacenotes_extension.serverDeleteLastPacenote()');
+      }
+
+      scope.saveRally = function () {
+        bngApi.engineLua('extensions.scripts_sopo__pacenotes_extension.savePacenoteData()');
+        scope.isRallyChanged = false;
       }
 
       scope.$watch('playbackLookahead', function(newVal, oldVal) {
@@ -52,15 +60,19 @@ angular.module('beamng.apps')
           }
 
           bngApi.engineLua('extensions.scripts_sopo__pacenotes_extension.sortPacenotes()');
+
+          scope.isRallyChanged = true;
         }
       }, true); // deep watch: true
 
       scope.selectRow = function (index) {
         scope.selectedRowIndex = index;
+        bngApi.engineLua(`Engine.Audio.playOnce('AudioGui', 'art/sounds/' .. extensions.scripts_sopo__pacenotes_extension.scenarioPath .. '/pacenotes/${scope.pacenotes_data[index].wave_name}', extensions.scripts_sopo__pacenotes_extension.settings.sound_data)`);
       }
 
       scope.deletePacenote = function () {
         bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.deletePacenote(${scope.selectedRowIndex + 1})`);
+        scope.isRallyChanged = true;
       }
 
       scope.setSaveRecce = function () {
@@ -68,7 +80,7 @@ angular.module('beamng.apps')
         document.querySelector('#recce-save').disabled = true;
         document.querySelector('#recce-save').textContent = 'Auto-saving...';
 
-        bngApi.engineLua('extensions.scripts_sopo__pacenotes_extension.saveRecce()');
+        bngApi.engineLua('extensions.scripts_sopo__pacenotes_extension.savePacenoteData()');
       }
 
       // gui hooks
@@ -97,10 +109,14 @@ angular.module('beamng.apps')
       scope.$on('PacenoteDataUpdate', function(event, args) {
         watchEnabled = false;
         scope.pacenotes_data = args.pacenotes_data;
+        scope.isRallyChanged = !args.firstLoad;
         watchEnabled = true;
       });
 
       scope.$on('PacenoteSelected', function(event, args) {
+        if (!scope.followNote)
+          return;
+
         scope.selectedRowIndex = args.index;
         document.querySelector('#pacenotes-list tbody').children[args.index].scrollIntoViewIfNeeded();
       });
