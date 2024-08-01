@@ -132,6 +132,9 @@ local function loadRally()
         resetRally()
 
         M.guiSendPacenoteData()
+
+        -- in case we are recording more pacenotes, set the index
+        M.serverResetCount(#M.pacenotes_data)
     else
         -- if we don't have a file but we're in a mission, then we're in recce mode
         M.mode = "recce"
@@ -241,6 +244,7 @@ local function updateRally(dt)
     end
 
     M.last_position = position
+    M.last_distance = M.checkpoints_array[M.checkpoint_index][4]
 
     local vel = my_veh:getVelocity()
     local speedAlongTrack = 0
@@ -383,6 +387,12 @@ local function connectToMicServer()
     if M.scenarioPath ~= nil then
         M.serverUpdateMission()
     end
+
+    -- in case we are recording more pacenotes, set the index
+    if M.mode == "rally" then
+        M.micServer:send('\n')
+        M.serverResetCount(#M.pacenotes_data)
+    end
 end
 
 local function serverUpdateMission()
@@ -412,20 +422,35 @@ end
 
 local function handleStartRecording()
     log('I', M.logTag, 'start rec')
-    -- if we're connected and in recce mode, then we can start recording
-    if M.micServer ~= nil and M.mode == "recce" then
+
+    if M.micServer == nil then
+        log('I', M.logTag, 'Didn\'t start recording: not connected to server')
+        return
+    end
+
+    if M.mode == "rally" or M.mode == "recce" then
         M.micServer:send('record_start')
 
-        local lastCheckpoint = M.checkpoints_array[#M.checkpoints_array]
-        M.recordingDistance = lastCheckpoint[4]
+        if M.mode == "recce" then
+            local lastCheckpoint = M.checkpoints_array[#M.checkpoints_array]
+            M.recordingDistance = lastCheckpoint[4]
+        elseif M.mode == "rally" then
+            M.recordingDistance = M.last_distance
+        end
+    else
+        log('I', M.logTag, 'Didn\'t start recording: not in rally or recce mode')
     end
 end
 
 local function handleStopRecording()
     log('I', M.logTag, 'stop rec')
-    if M.micServer ~= nil then
-        M.micServer:send('record_stop')
+
+    if M.micServer == nil then
+        log('I', M.logTag, 'Didn\'t stop recording: not connected to server')
+        return
     end
+
+    M.micServer:send('record_stop')
 
     local newNote = {
         d = M.recordingDistance,
@@ -433,6 +458,14 @@ local function handleStopRecording()
     }
 
     table.insert(M.pacenotes_data, newNote)
+
+    -- May have inserted out of order if in rally mode
+    if (M.mode == "rally") then
+        M.sortPacenotes()
+    end
+
+    M.guiSendPacenoteData()
+    M.guiSendSelectedPacenote(#M.pacenotes_data)
 
     if M.savingRecce then
         M.saveRecce()

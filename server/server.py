@@ -106,58 +106,65 @@ while True:
             response = "Server received: " + message
             # client_socket.sendall(response.encode('utf-8'))
 
-            parts = message.split()
-            if parts[0] == 'mission':
-                mission_path = Path(parts[1])
-            elif parts[0] == 'record_start':
-                if mission_path is None:
+            lines = message.split('\n')
+
+            for line in lines:
+                parts = line.split(' ')
+
+                if len(parts) == 0:
                     continue
 
-                recording = True
-                i += 1
-                # spawn a thread for recording
-                recording_thread = threading.Thread(target=record_audio)
-                recording_thread.daemon = True
-                recording_thread.start()
+                if parts[0] == 'mission':
+                    mission_path = Path(parts[1])
+                elif parts[0] == 'record_start':
+                    if mission_path is None:
+                        continue
 
-            elif parts[0] == 'record_stop':
-                # notify the recording thread to stop
-                recording = False
+                    recording = True
+                    i += 1
+                    # spawn a thread for recording
+                    recording_thread = threading.Thread(target=record_audio)
+                    recording_thread.daemon = True
+                    recording_thread.start()
 
-            elif parts[0] == 'mission_end':
-                mission_path = None
+                elif parts[0] == 'record_stop':
+                    # notify the recording thread to stop
+                    recording = False
 
-            elif parts[0] == 'delete_last_pacenote':
-                if mission_path is None:
-                    continue
+                elif parts[0] == 'mission_end':
+                    mission_path = None
 
-                # delete the last pacenote
-                full_path = output_path / mission_path / pacenotes_path / f'pacenote_{i}.wav'
-                if full_path.exists():
-                    full_path.unlink()
-                    i -= 1
+                elif parts[0] == 'delete_last_pacenote':
+                    if mission_path is None:
+                        continue
 
-                # confirm
-                audio_thread = threading.Thread(target=playWf, args=(wf_confirm,) )
-                audio_thread.daemon = True
-                audio_thread.start()
+                    # delete the last pacenote
+                    full_path = output_path / mission_path / pacenotes_path / f'pacenote_{i}.wav'
+                    if full_path.exists():
+                        full_path.unlink()
+                        i -= 1
 
-            elif parts[0] == 'reset_count':
-                print("Setting i")
+                    # confirm
+                    audio_thread = threading.Thread(target=playWf, args=(wf_confirm,) )
+                    audio_thread.daemon = True
+                    audio_thread.start()
 
-                # if parts[1] exists, set i to that value
-                if len(parts) > 1:
-                    # check that it's a valid integer
-                    try:
-                        i = int(parts[1]) - 1
-                    except ValueError:
-                        i = -1  # Set a default value
-                        print("Invalid value for i. Setting i to 0.")
-                else:
+                elif parts[0] == 'reset_count':
+                    print("Setting i")
 
-                    i = -1
+                    # if parts[1] exists, set i to that value
+                    if len(parts) > 1:
+                        # check that it's a valid integer
+                        try:
+                            i = int(parts[1]) - 1
+                        except ValueError:
+                            i = -1  # Set a default value
+                            print("Invalid value for i. Setting i to 0.")
+                    else:
 
-                print(f"i is now {i}")
+                        i = -1
+
+                    print(f"i is now {i}")
     except Exception as e:
         print("Error:", e)
     finally:
