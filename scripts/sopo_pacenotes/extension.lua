@@ -39,6 +39,8 @@ M.audioQueue = {}
 M.checkpointResolution = 2 -- meters between stage checkpoints
 M.checkpointMaxEcc = 10 -- prevent adding a checkpoint in a restart
 
+M.recordingIndex = 0
+
 M.recordingDistance = 0
 
 M.savingRecce = false
@@ -421,6 +423,7 @@ local function serverResetCount(i)
     if M.micServer ~= nil then
         i = i or 0
         M.micServer:send('reset_count ' .. i)
+        M.recordingIndex = i
     end
 end
 
@@ -458,8 +461,10 @@ local function handleStopRecording()
 
     local newNote = {
         d = M.recordingDistance,
-        wave_name = 'pacenote_' .. #M.pacenotes_data .. '.wav'
+        wave_name = 'pacenote_' .. M.recordingIndex .. '.wav'
     }
+
+    M.recordingIndex = M.recordingIndex + 1
 
     table.insert(M.pacenotes_data, newNote)
 
