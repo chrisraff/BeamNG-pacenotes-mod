@@ -76,9 +76,6 @@
             <button id="" ng-click="deleteLastPacenote()" class="hide">Delete Last Pacenote</button>
 
             <p>
-                Distance: <span id="distance"></span>
-            </p>
-            <p>
                 Number of Pacenotes: <span id="pacenotes-count"></span>
             </p>
         </div>
@@ -95,7 +92,7 @@
                     <tbody>
                         <tr ng-repeat="pacenote in pacenotes_data" ng-click="selectRow($index)" ng-class="{'selected-row': $index === selectedRowIndex}">
                             <td>{{pacenote.name || pacenote.wave_name}}</td>
-                            <td>{{pacenote.d}}</td>
+                            <td class="distance">{{pacenote.d}}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -116,6 +113,11 @@
 
             <button ng-click="saveRally()" ng-disabled="!isRallyChanged">Save Pacenotes</button>
         </div>
+
+        <p>
+            Distance: <span id="distance">{{distance.toFixed(2)}}</span>
+            <button ng-click="jumpToDistance()">Jump To</button>
+        </p>
     </details>
 
 </div>

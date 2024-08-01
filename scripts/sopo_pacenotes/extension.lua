@@ -257,6 +257,8 @@ local function updateRally(dt)
     end
 
     queueUpUntil(checkpoint[4] + M.settings.pacenote_playback.lookahead_distance_base + speedAlongTrack * M.settings.pacenote_playback.speed_multiplier)
+
+    M.guiSendRallyData()
 end
 
 local function updateAudioQueue(dt)
@@ -323,9 +325,11 @@ local function updateRecce(dt)
 
         local newPoint = {position.x, position.y, position.z, newD}
         table.insert(M.checkpoints_array, newPoint) -- Append new_point to checkpoints_array
+
+        M.last_distance = newD
     end
 
-    M.guiSendRecceData()
+    M.guiSendRallyData()
 end
 
 local function savePacenoteData()
@@ -494,12 +498,8 @@ local function guiSendMicData()
     guihooks.trigger('MicDataUpdate', {connected=M.micServer ~= nil})
 end
 
-local function guiSendRecceData()
-    local lastCheckpoint = M.checkpoints_array[#M.checkpoints_array]
-    if lastCheckpoint == nil then
-        lastCheckpoint = {0, 0, 0, 0}
-    end
-    guihooks.trigger('RecceDataUpdate', {distance=lastCheckpoint[4], pacenoteNumber=#M.pacenotes_data})
+local function guiSendRallyData()
+    guihooks.trigger('RallyDataUpdate', {distance=M.last_distance, pacenoteNumber=#M.pacenotes_data})
 end
 
 local function guiSendPacenoteData(firstLoad)
@@ -533,7 +533,7 @@ M.handleStartRecording = handleStartRecording
 M.handleStopRecording = handleStopRecording
 M.guiSendMissionData = guiSendMissionData
 M.guiSendMicData = guiSendMicData
-M.guiSendRecceData = guiSendRecceData
+M.guiSendRallyData = guiSendRallyData
 M.guiSendPacenoteData = guiSendPacenoteData
 M.guiSendSelectedPacenote = guiSendSelectedPacenote
 M.guiInit = guiInit

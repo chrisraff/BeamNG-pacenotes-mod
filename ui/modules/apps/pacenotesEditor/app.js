@@ -35,6 +35,23 @@ angular.module('beamng.apps')
         scope.isRallyChanged = false;
       }
 
+      scope.jumpToDistance = function () {
+        // find the closest pacenote to the given distance
+        let distances = document.querySelectorAll('.distance');
+        let closestIndex = 0;
+        let closestDistance = Math.abs(parseFloat(distances[0].textContent) - scope.distance);
+        distances.forEach((distance, index) => {
+          let currentDistance = Math.abs(parseFloat(distance.textContent) - scope.distance);
+          if (currentDistance < closestDistance) {
+            closestDistance = currentDistance;
+            closestIndex = index;
+          }
+        });
+
+        // scroll into view
+        distances[closestIndex].scrollIntoViewIfNeeded();
+      }
+
       scope.$watch('playbackLookahead', function(newVal, oldVal) {
         if (newVal !== oldVal) {
           bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.settings.pacenote_playback.lookahead_distance_base = ${newVal}`);
@@ -101,8 +118,8 @@ angular.module('beamng.apps')
         scope.updateMicConnection(args.connected);
       });
 
-      scope.$on('RecceDataUpdate', function(event, args) {
-        document.querySelector('#distance').innerHTML = args.distance;
+      scope.$on('RallyDataUpdate', function(event, args) {
+        scope.distance = args.distance;
         document.querySelector('#pacenotes-count').innerHTML = args.pacenoteNumber;
       });
 
