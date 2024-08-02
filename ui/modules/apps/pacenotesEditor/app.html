@@ -18,9 +18,13 @@
             background-color: rgba(0, 0, 0, 0.5);
         }
 
+        .pacenotes-editor details {
+            margin-left: 10px;
+        }
+
         /* TODO switch to flexboxes so table height can be smarter */
         #pacenotes-list {
-            height: 100px;
+            height: 300px;
             resize: vertical;
             overflow-y: auto;
         }
@@ -31,7 +35,7 @@
         }
 
         .pacenotes-editor th, .pacenotes-editor td {
-            border: 1px solid white;
+            border: 1px solid lightgray;
             padding: 8px;
             text-align: left;
             background-color: rgba(0, 0, 0, 0.2);
@@ -43,7 +47,8 @@
         }
 
         .pacenotes-editor .selected-row {
-            background-color: rgba(0.7, 0.7, 0.7, 0.6);
+            background-color: rgba(52, 51, 95, 0.7);
+            border: 2px solid white;
         }
     </style>
 
@@ -106,10 +111,16 @@
             <label for="name">Name:</label>
             <input type="text" ng-model="pacenotes_data[selectedRowIndex].name" ng-model-options="{ updateOn: 'blur keydown', debounce: {'blur': 0, 'keydown': 500} }" placeholder="{{pacenotes_data[selectedRowIndex].wave_name }}">
 
-            <label for="distance">Distance:</label>
+            <label for="distance" title="The distance of the turn or feature along the path. This should be aligned with the start of the turn, not the location you want to hear it.">Distance:</label>
             <input type="number" ng-model="pacenotes_data[selectedRowIndex].d" ng-model-options="{ updateOn: 'blur keydown', debounce: {'blur': 0, 'keydown': 500} }" >
 
-            <button id="delete-pacenote" ng-click="deletePacenote()">Delete Pacenote</button>
+            <label for="continue-distance" title="Useful for hairpins: how close a user must be to this point before the next note can be played.">Continue Distance:</label>
+            <input type="number" id="continue-distance" ng-model="pacenotes_data[selectedRowIndex].continueDistance" ng-model-options="{ updateOn: 'blur keydown', debounce: {'blur': 0, 'keydown': 500} }">
+            <button id="clear-continue-distance" ng-click="deleteContinueDistance()">X</button>
+
+            <br/>
+
+            <button id="delete-pacenote" ng-click="deletePacenote()" ng-model-options="{ debounce: 250 }">Delete Pacenote</button>
 
             <button ng-click="saveRally()" ng-disabled="!isRallyChanged">Save Pacenotes</button>
         </div>

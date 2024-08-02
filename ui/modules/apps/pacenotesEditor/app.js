@@ -71,10 +71,15 @@ angular.module('beamng.apps')
 
           // only update the appropriate values
           bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.pacenotes_data[${scope.selectedRowIndex+1}].d = ${pacenote.d}`);
-          if (pacenote.name !== undefined)
+          if (pacenote.name !== undefined && pacenote.name !== '')
           {
             bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.pacenotes_data[${scope.selectedRowIndex+1}].name = "${pacenote.name}"`);
           }
+
+          if (pacenote.continueDistance !== undefined)
+            bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.pacenotes_data[${scope.selectedRowIndex+1}].continueDistance = ${pacenote.continueDistance}`);
+          else
+            bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.pacenotes_data[${scope.selectedRowIndex+1}].continueDistance = nil`);
 
           bngApi.engineLua('extensions.scripts_sopo__pacenotes_extension.sortPacenotes()');
 
@@ -85,6 +90,13 @@ angular.module('beamng.apps')
       scope.selectRow = function (index) {
         scope.selectedRowIndex = index;
         bngApi.engineLua(`Engine.Audio.playOnce('AudioGui', 'art/sounds/' .. extensions.scripts_sopo__pacenotes_extension.scenarioPath .. '/pacenotes/${scope.pacenotes_data[index].wave_name}', extensions.scripts_sopo__pacenotes_extension.settings.sound_data)`);
+      }
+
+      scope.deleteContinueDistance = function () {
+        if (scope.selectedRowIndex === null) { return }
+
+        delete scope.pacenotes_data[scope.selectedRowIndex].continueDistance;
+        scope.isRallyChanged = true;
       }
 
       scope.deletePacenote = function () {

@@ -71,7 +71,7 @@ local function queueUpUntil(lookahead_target)
         if note.d > M.distance_of_last_queued_note and note.d < lookahead_target then
             local newSound = {
                 played = false,
-                file = 'art/sounds/' .. M.scenarioPath .. '/pacenotes/' .. note.wave_name
+                pacenote = note
             }
             table.insert(M.audioQueue, newSound)
             M.guiSendSelectedPacenote(i);
@@ -273,7 +273,9 @@ local function updateAudioQueue(dt)
 
     -- play the sound
     if not currentSound.played then
-        local result = Engine.Audio.playOnce('AudioGui', currentSound.file, M.settings.sound_data)
+        local path = 'art/sounds/' .. M.scenarioPath .. '/pacenotes/' .. currentSound.pacenote.wave_name
+        local result = Engine.Audio.playOnce('AudioGui', path, M.settings.sound_data)
+
         if result ~= nil then
             currentSound.time = result.len
         else
@@ -283,7 +285,10 @@ local function updateAudioQueue(dt)
     -- track the time of the sound
     else
         currentSound.time = currentSound.time - dt
-        if currentSound.time <= 0 then
+
+        local finishedPlaying = currentSound.time <= 0
+        local continueCondition = currentSound.pacenote.continueDistance == nil or currentSound.pacenote.d - currentSound.pacenote.continueDistance <= M.last_distance
+        if finishedPlaying and continueCondition then
             table.remove(M.audioQueue, 1)
         end
     end
@@ -334,17 +339,6 @@ local function updateRecce(dt)
     M.guiSendRallyData()
 end
 
-local function savePacenoteData()
-    if M.scenarioPath == nil then return end
-
-    local file = jsonWriteFile('art/sounds/' .. M.scenarioPath .. '/pacenotes.json', {M.checkpoints_array, M.pacenotes_data})
-    if file then
-        log('I', M.logTag, 'saved recce data')
-    else
-        log('E', M.logTag, 'failed to save recce data')
-    end
-end
-
 local function onUpdate(dt)
     if M.mode == "rally" then
         updateRally(dt)
@@ -372,6 +366,17 @@ local function sortPacenotes()
     M.guiSendPacenoteData()
 end
 
+local function savePacenoteData()
+    if M.scenarioPath == nil then return end
+
+    local file = jsonWriteFile('art/sounds/' .. M.scenarioPath .. '/pacenotes.json', {M.checkpoints_array, M.pacenotes_data})
+    if file then
+        log('I', M.logTag, 'saved recce data')
+    else
+        log('E', M.logTag, 'failed to save recce data')
+    end
+end
+
 -- server functions
 
 local function connectToMicServer()
@@ -397,7 +402,16 @@ local function connectToMicServer()
     -- in case we are recording more pacenotes, set the index
     if M.mode == "rally" then
         M.micServer:send('\n')
-        M.serverResetCount(#M.pacenotes_data)
+        -- avoid overwriting existing pacenotes
+        local maxNumber = 0
+        for _, pacenote in ipairs(M.pacenotes_data) do
+            local waveName = pacenote.wave_name
+            local number = tonumber(waveName:match("%d+"))
+            if number and number > maxNumber then
+                maxNumber = number
+            end
+        end
+        M.serverResetCount(maxNumber + 1)
     end
 end
 
@@ -524,10 +538,10 @@ end
 M.onExtensionLoaded = onExtensionLoaded
 M.onAnyMissionChanged = onAnyMissionChanged
 M.onUiChangedState = onUiChangedState
-M.savePacenoteData = savePacenoteData
 M.onUpdate = onUpdate
 M.deletePacenote = deletePacenote
 M.sortPacenotes = sortPacenotes
+M.savePacenoteData = savePacenoteData
 M.onScenarioChange = onScenarioChange
 M.connectToMicServer = connectToMicServer
 M.serverCloseMission = serverCloseMission
