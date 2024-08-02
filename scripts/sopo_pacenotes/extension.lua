@@ -361,6 +361,15 @@ local function deletePacenote(index)
     end
 end
 
+local function deleteDisabledPacenotes()
+    for i = #M.pacenotes_data, 1, -1 do
+        if M.pacenotes_data[i].disabled then
+            table.remove(M.pacenotes_data, i)
+        end
+    end
+    M.guiSendPacenoteData()
+end
+
 local function sortPacenotes()
     local function compare(a, b)
         if a.d == b.d then

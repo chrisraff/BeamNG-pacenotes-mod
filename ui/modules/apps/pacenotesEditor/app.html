@@ -50,6 +50,12 @@
             background-color: rgba(52, 51, 95, 0.7);
             border: 2px solid white;
         }
+
+        .pacenotes-editor .disabled-row {
+            background-color: rgba(82, 82, 82, 0.4);
+            color: gray;
+            text-decoration: line-through;
+            }
     </style>
 
     <details open>
@@ -95,7 +101,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr ng-repeat="pacenote in pacenotes_data" ng-click="selectRow($index)" ng-class="{'selected-row': $index === selectedRowIndex}">
+                        <tr ng-repeat="pacenote in pacenotes_data" ng-click="selectRow($index)" ng-class="{'selected-row': $index === selectedRowIndex, 'disabled-row': pacenotes_data[$index].disabled}" ng-model-options="{ debounce: 100 }">
                             <td>{{pacenote.name || pacenote.wave_name}}</td>
                             <td class="distance">{{pacenote.d}}</td>
                         </tr>

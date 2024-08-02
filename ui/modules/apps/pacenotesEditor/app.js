@@ -31,6 +31,7 @@ angular.module('beamng.apps')
       }
 
       scope.saveRally = function () {
+        bngApi.engineLua('extensions.scripts_sopo__pacenotes_extension.deleteDisabledPacenotes()');
         bngApi.engineLua('extensions.scripts_sopo__pacenotes_extension.savePacenoteData()');
         scope.isRallyChanged = false;
       }
@@ -81,6 +82,11 @@ angular.module('beamng.apps')
           else
             bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.pacenotes_data[${scope.selectedRowIndex+1}].continueDistance = nil`);
 
+          if (pacenote.disabled !== undefined)
+            bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.pacenotes_data[${scope.selectedRowIndex+1}].disabled = true`);
+          else
+            bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.pacenotes_data[${scope.selectedRowIndex+1}].disabled = nil`);
+
           bngApi.engineLua('extensions.scripts_sopo__pacenotes_extension.sortPacenotes()');
 
           scope.isRallyChanged = true;
@@ -100,7 +106,19 @@ angular.module('beamng.apps')
       }
 
       scope.deletePacenote = function () {
-        bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.deletePacenote(${scope.selectedRowIndex + 1})`);
+        if (scope.selectedRowIndex === null) { return }
+
+        // toggle the disabled flag
+        if (scope.pacenotes_data[scope.selectedRowIndex].disabled === undefined) {
+          // bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.pacenotes_data[${scope.selectedRowIndex+1}].disabled = true`);
+          scope.pacenotes_data[scope.selectedRowIndex].disabled = true;
+        } else {
+          // bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.pacenotes_data[${scope.selectedRowIndex+1}].disabled = nil`);
+          delete scope.pacenotes_data[scope.selectedRowIndex].disabled;
+        }
+
+        bngApi.engineLua('extensions.scripts_sopo__pacenotes_extension.guiSendPacenoteData()');
+
         scope.isRallyChanged = true;
       }
 
