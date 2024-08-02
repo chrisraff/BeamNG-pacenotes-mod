@@ -362,7 +362,14 @@ local function deletePacenote(index)
 end
 
 local function sortPacenotes()
-    table.sort(M.pacenotes_data, function(a, b) return a.d < b.d end)
+    local function compare(a, b)
+        if a.d == b.d then
+            return a.wave_name < b.wave_name
+        end
+        return a.d < b.d
+    end
+
+    table.sort(M.pacenotes_data, compare)
     M.guiSendPacenoteData()
 end
 
