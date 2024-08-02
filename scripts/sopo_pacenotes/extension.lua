@@ -556,6 +556,7 @@ M.onAnyMissionChanged = onAnyMissionChanged
 M.onUiChangedState = onUiChangedState
 M.onUpdate = onUpdate
 M.deletePacenote = deletePacenote
+M.deleteDisabledPacenotes = deleteDisabledPacenotes
 M.sortPacenotes = sortPacenotes
 M.savePacenoteData = savePacenoteData
 M.onScenarioChange = onScenarioChange
