@@ -56,6 +56,15 @@
             color: gray;
             text-decoration: line-through;
             }
+
+        .pacenotes-editor table input {
+            width: 100%;
+            font-weight: bold;
+        }
+
+        .pacenotes-editor input::placeholder {
+            color: rgba(240, 240, 240, 0.9);
+        }
     </style>
 
     <details open>
@@ -102,8 +111,12 @@
                     </thead>
                     <tbody>
                         <tr ng-repeat="pacenote in pacenotes_data" ng-click="selectRow($index)" ng-class="{'selected-row': $index === selectedRowIndex, 'disabled-row': pacenotes_data[$index].disabled}" ng-model-options="{ debounce: 100 }">
-                            <td>{{pacenote.name || pacenote.wave_name}}</td>
-                            <td class="distance">{{pacenote.d}}</td>
+                            <td>
+                                <input type="text" ng-model="pacenotes_data[$index].name" ng-model-options="{ updateOn: 'blur keydown', debounce: {'blur': 0, 'keydown': 500} }" placeholder="{{pacenotes_data[$index].wave_name }}" ng-focus="selectRow($index)">
+                            </td>
+                            <td class="distance">
+                                <input type="number" ng-model="pacenotes_data[$index].d" ng-model-options="{ updateOn: 'blur keydown', debounce: {'blur': 0, 'keydown': 500} }" ng-focus="selectRow($index)">
+                            </td>
                         </tr>
                     </tbody>
                 </table>
@@ -114,15 +127,9 @@
         </div>
 
         <div id="selected-row-details" ng-show="selectedRowIndex !== null">
-            <label for="name">Name:</label>
-            <input type="text" ng-model="pacenotes_data[selectedRowIndex].name" ng-model-options="{ updateOn: 'blur keydown', debounce: {'blur': 0, 'keydown': 500} }" placeholder="{{pacenotes_data[selectedRowIndex].wave_name }}">
-
-            <label for="distance" title="The distance of the turn or feature along the path. This should be aligned with the start of the turn, not the location you want to hear it.">Distance:</label>
-            <input type="number" ng-model="pacenotes_data[selectedRowIndex].d" ng-model-options="{ updateOn: 'blur keydown', debounce: {'blur': 0, 'keydown': 500} }" >
-
             <label for="continue-distance" title="Useful for hairpins: how close a user must be to this point before the next note can be played.">Continue Distance:</label>
             <input type="number" id="continue-distance" ng-model="pacenotes_data[selectedRowIndex].continueDistance" ng-model-options="{ updateOn: 'blur keydown', debounce: {'blur': 0, 'keydown': 500} }">
-            <button id="clear-continue-distance" ng-click="deleteContinueDistance()" ng-disabled="!pacenotes_data[selectedRowIndex].continueDistance">X</button>
+            <button id="clear-continue-distance" ng-click="deleteContinueDistance()" ng-disabled="pacenotes_data[selectedRowIndex].continueDistance === undefined">X</button>
 
             <br/>
 

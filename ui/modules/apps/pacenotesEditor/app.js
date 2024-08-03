@@ -94,6 +94,9 @@ angular.module('beamng.apps')
       }, true); // deep watch: true
 
       scope.selectRow = function (index) {
+        if (scope.selectedRowIndex === index) {
+          return;
+        }
         scope.selectedRowIndex = index;
         bngApi.engineLua(`Engine.Audio.playOnce('AudioGui', 'art/sounds/' .. extensions.scripts_sopo__pacenotes_extension.scenarioPath .. '/pacenotes/${scope.pacenotes_data[index].wave_name}', extensions.scripts_sopo__pacenotes_extension.settings.sound_data)`);
       }
