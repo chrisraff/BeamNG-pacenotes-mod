@@ -134,9 +134,6 @@ local function loadRally()
         resetRally()
 
         M.guiSendPacenoteData()
-
-        -- in case we are recording more pacenotes, set the index
-        M.serverResetCount(#M.pacenotes_data)
     else
         -- if we don't have a file but we're in a mission, then we're in recce mode
         M.mode = "recce"
@@ -414,26 +411,27 @@ local function connectToMicServer()
     if M.scenarioPath ~= nil then
         M.serverUpdateMission()
     end
-
-    -- in case we are recording more pacenotes, set the index
-    if M.mode == "rally" then
-        M.micServer:send('\n')
-        -- avoid overwriting existing pacenotes
-        local maxNumber = 0
-        for _, pacenote in ipairs(M.pacenotes_data) do
-            local waveName = pacenote.wave_name
-            local number = tonumber(waveName:match("%d+"))
-            if number and number > maxNumber then
-                maxNumber = number
-            end
-        end
-        M.serverResetCount(maxNumber + 1)
-    end
 end
 
 local function serverUpdateMission()
     if M.micServer ~= nil then
         M.micServer:send('mission ' .. M.scenarioPath)
+
+        -- in case we are recording more pacenotes, set the index
+        if M.mode == "rally" then
+            -- avoid overwriting existing pacenotes
+            local maxNumber = 0
+            for _, pacenote in ipairs(M.pacenotes_data) do
+                local waveName = pacenote.wave_name
+                local number = tonumber(waveName:match("%d+"))
+                if number and number > maxNumber then
+                    maxNumber = number
+                end
+            end
+
+            M.micServer:send('\n')
+            M.serverResetCount(maxNumber + 1)
+        end
     end
 end
 
