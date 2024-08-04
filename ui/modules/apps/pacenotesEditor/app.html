@@ -46,7 +46,8 @@
             background-color: rgba(0, 0, 0, 0.4);
         }
 
-        .pacenotes-editor .selected-row {
+        /* Double select selected-row for priority over disabled row */
+        .pacenotes-editor .selected-row.selected-row {
             background-color: rgba(52, 51, 95, 0.7);
             border: 2px solid white;
         }
@@ -55,7 +56,11 @@
             background-color: rgba(82, 82, 82, 0.4);
             color: gray;
             text-decoration: line-through;
-            }
+        }
+
+        .pacenotes-editor .disabled-row input {
+            text-decoration: line-through;
+        }
 
         .pacenotes-editor table input {
             width: 100%;
@@ -64,6 +69,10 @@
 
         .pacenotes-editor input::placeholder {
             color: rgba(240, 240, 240, 0.9);
+        }
+
+        .pacenotes-editor .disabled-row input::placeholder {
+            text-decoration: line-through;
         }
     </style>
 
@@ -133,7 +142,9 @@
 
             <br/>
 
-            <button id="delete-pacenote" ng-click="deletePacenote()" ng-model-options="{ debounce: 250 }">Delete Pacenote</button>
+            <button id="delete-pacenote" ng-click="deletePacenote()" ng-model-options="{ debounce: 250 }">
+                {{ pacenotes_data[selectedRowIndex].disabled ? 'Restore Pacenote' : 'Delete Pacenote' }}
+            </button>
 
             <button ng-click="saveRally()" ng-disabled="!isRallyChanged">Save Pacenotes</button>
         </div>
