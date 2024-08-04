@@ -68,7 +68,7 @@ end
 
 local function queueUpUntil(lookahead_target)
     for i, note in ipairs(M.pacenotes_data) do
-        if note.d > M.distance_of_last_queued_note and note.d < lookahead_target then
+        if note.d > M.distance_of_last_queued_note and note.d < lookahead_target and not note.disabled then
             local newSound = {
                 played = false,
                 pacenote = note
