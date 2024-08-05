@@ -27,6 +27,9 @@ M.guiConfig = {
     isRallyChanged = false,
 }
 
+-- debugging sudden queue all
+M.maxSpeedAlongTrack = 0
+
 M.checkpoints_array = nil
 M.checkpoint_index = nil
 M.pacenotes_data = nil
@@ -39,6 +42,7 @@ M.distance_of_last_queued_note = 0
 M.last_position = vec3(0, 0, 0)
 
 M.audioQueue = {}
+M.audioQueueClearing = false
 
 -- Recording variables
 M.checkpointResolution = 2 -- meters between stage checkpoints
@@ -87,6 +91,8 @@ local function queueUpUntil(lookahead_target)
 end
 
 local function clearQueue()
+    M.audioQueueClearing = true
+
     if #M.audioQueue > 0 then
         M.audioQueue = {M.audioQueue[1]}
     end
@@ -155,6 +161,12 @@ local function cleanup()
     M.mode = "none"
     M.scenarioPath = nil
     M.scenarioHandle = nil
+
+    M.backup_pacenotes_data = M.pacenotes_data
+    M.pacenotes_data = nil
+
+    clearQueue()
+
     M.serverCloseMission()
     M.guiSendMissionData()
 end
@@ -287,14 +299,16 @@ local function updateAudioQueue(dt)
             currentSound.time = 0
         end
         currentSound.played = 0
+
     -- track the time of the sound
     else
         currentSound.time = currentSound.time - dt
 
         local finishedPlaying = currentSound.time <= 0
         local continueCondition = currentSound.pacenote.continueDistance == nil or currentSound.pacenote.d - currentSound.pacenote.continueDistance <= M.last_distance
-        if finishedPlaying and continueCondition then
+        if finishedPlaying and (continueCondition or M.audioQueueClearing) then
             table.remove(M.audioQueue, 1)
+            M.audioQueueClearing = false
         end
     end
 end
@@ -512,7 +526,7 @@ local function handleStopRecording()
     end
 
     M.guiSendPacenoteData()
-    M.guiSendSelectedPacenote(#M.pacenotes_data)
+    -- M.guiSendSelectedPacenote(#M.pacenotes_data)
 
     if M.savingRecce then
         M.savePacenoteData()
