@@ -79,7 +79,7 @@
         }
     </style>
 
-    <details open>
+    <details id="main-panel" open>
         <summary>Pacenotes</summary>
 
         <p>
@@ -148,14 +148,14 @@
             <button id="delete-pacenote" ng-click="deletePacenote()" ng-model-options="{ debounce: 250 }">
                 {{ pacenotes_data[selectedRowIndex].disabled ? 'Restore Pacenote' : 'Delete Pacenote' }}
             </button>
-
-            <button ng-click="saveRally()" ng-disabled="!isRallyChanged">Save Pacenotes</button>
         </div>
 
         <p>
             Distance: <span id="distance">{{distance.toFixed(2)}}</span>
             <button ng-click="jumpToDistance()">Jump To</button>
         </p>
+
+        <button ng-click="saveRally()" ng-disabled="!isRallyChanged">Save Pacenotes</button>
     </details>
 
 </div>

@@ -33,7 +33,11 @@ angular.module('beamng.apps')
       scope.saveRally = function () {
         bngApi.engineLua('extensions.scripts_sopo__pacenotes_extension.deleteDisabledPacenotes()');
         bngApi.engineLua('extensions.scripts_sopo__pacenotes_extension.savePacenoteData()');
-        scope.isRallyChanged = false;
+      }
+
+      scope.setRallyChanged = function (isRallyChanged) {
+        scope.isRallyChanged = isRallyChanged;
+        bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.guiConfig.isRallyChanged = ${isRallyChanged}`);
       }
 
       scope.jumpToDistance = function () {
@@ -89,7 +93,7 @@ angular.module('beamng.apps')
 
           bngApi.engineLua('extensions.scripts_sopo__pacenotes_extension.sortPacenotes()');
 
-          scope.isRallyChanged = true;
+          scope.setRallyChanged(true);
         }
       }, true); // deep watch: true
 
@@ -105,7 +109,7 @@ angular.module('beamng.apps')
         if (scope.selectedRowIndex === null) { return }
 
         delete scope.pacenotes_data[scope.selectedRowIndex].continueDistance;
-        scope.isRallyChanged = true;
+        scope.setRallyChanged(true);
       }
 
       scope.deletePacenote = function () {
@@ -122,7 +126,7 @@ angular.module('beamng.apps')
 
         bngApi.engineLua('extensions.scripts_sopo__pacenotes_extension.guiSendPacenoteData()');
 
-        scope.isRallyChanged = true;
+        scope.setRallyChanged(true);
       }
 
       scope.setSaveRecce = function () {
@@ -147,6 +151,11 @@ angular.module('beamng.apps')
         document.querySelector('#recce-save').textContent = 'Save Recce';
       });
 
+      scope.$on('GuiDataUpdate', function(event, args) {
+        document.querySelector('.pacenotes-editor #main-panel').open = args.panelOpen;
+        scope.isRallyChanged = args.isRallyChanged;
+      });
+
       scope.$on('MicDataUpdate', function(event, args) {
         scope.updateMicConnection(args.connected);
       });
@@ -159,7 +168,6 @@ angular.module('beamng.apps')
       scope.$on('PacenoteDataUpdate', function(event, args) {
         watchEnabled = false;
         scope.pacenotes_data = args.pacenotes_data;
-        scope.isRallyChanged = !args.firstLoad;
         watchEnabled = true;
       });
 
@@ -169,6 +177,10 @@ angular.module('beamng.apps')
 
         scope.selectedRowIndex = args.index;
         document.querySelector('#pacenotes-list tbody').children[args.index].scrollIntoViewIfNeeded();
+      });
+
+      scope.$on('$destroy', function() {
+        bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.guiConfig.panelOpen = ${document.querySelector('#main-panel').open};`);
       });
 
       element.ready(function () {

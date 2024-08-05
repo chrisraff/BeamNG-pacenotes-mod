@@ -22,6 +22,11 @@ M.settings = {
     }
 }
 
+M.guiConfig = {
+    panelOpen = true,
+    isRallyChanged = false,
+}
+
 M.checkpoints_array = nil
 M.checkpoint_index = nil
 M.pacenotes_data = nil
@@ -133,7 +138,10 @@ local function loadRally()
 
         resetRally()
 
+        M.guiConfig.isRallyChanged = false
+
         M.guiSendPacenoteData()
+        M.guiSendGuiData()
     else
         -- if we don't have a file but we're in a mission, then we're in recce mode
         M.mode = "recce"
@@ -384,9 +392,11 @@ local function savePacenoteData()
 
     local file = jsonWriteFile('art/sounds/' .. M.scenarioPath .. '/pacenotes.json', {M.checkpoints_array, M.pacenotes_data})
     if file then
-        log('I', M.logTag, 'saved recce data')
+        log('I', M.logTag, 'saved pacenote data')
+        M.guiConfig.isRallyChanged = false
+        M.guiSendGuiData()
     else
-        log('E', M.logTag, 'failed to save recce data')
+        log('E', M.logTag, 'failed to save pacenote data')
     end
 end
 
@@ -523,7 +533,11 @@ local function guiSendMissionData()
     }
     guihooks.trigger('MissionDataUpdate', data)
 
-    M.guiSendPacenoteData(true)
+    M.guiSendPacenoteData()
+end
+
+local function guiSendGuiData()
+    guihooks.trigger('GuiDataUpdate', M.guiConfig)
 end
 
 local function guiSendMicData()
@@ -535,9 +549,8 @@ local function guiSendRallyData()
     guihooks.trigger('RallyDataUpdate', {distance=M.last_distance, pacenoteNumber=#M.pacenotes_data})
 end
 
-local function guiSendPacenoteData(firstLoad)
-    local firstLoad = firstLoad or false
-    guihooks.trigger('PacenoteDataUpdate', {pacenotes_data = M.pacenotes_data, firstLoad = firstLoad})
+local function guiSendPacenoteData()
+    guihooks.trigger('PacenoteDataUpdate', {pacenotes_data = M.pacenotes_data})
 end
 
 local function guiSendSelectedPacenote(index)
@@ -547,6 +560,7 @@ end
 local function guiInit()
     M.guiSendMissionData()
     M.guiSendMicData()
+    M.guiSendGuiData()
 end
 
 M.onExtensionLoaded = onExtensionLoaded
@@ -566,6 +580,7 @@ M.serverResetCount = serverResetCount
 M.handleStartRecording = handleStartRecording
 M.handleStopRecording = handleStopRecording
 M.guiSendMissionData = guiSendMissionData
+M.guiSendGuiData = guiSendGuiData
 M.guiSendMicData = guiSendMicData
 M.guiSendRallyData = guiSendRallyData
 M.guiSendPacenoteData = guiSendPacenoteData
