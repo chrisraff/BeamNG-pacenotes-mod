@@ -273,6 +273,9 @@ local function updateRally(dt)
         local nextCheckpoint = M.checkpoints_array[M.checkpoint_index + 1]
         local checkpointDirection = vec3(nextCheckpoint[1] - checkpoint[1], nextCheckpoint[2] - checkpoint[2], nextCheckpoint[3] - checkpoint[3]):normalized()
         speedAlongTrack = vel:dot(checkpointDirection)
+
+        -- cap this number at 90 - some resets can cause big numbers
+        speedAlongTrack = math.min(speedAlongTrack, 90)
     end
 
     queueUpUntil(checkpoint[4] + M.settings.pacenote_playback.lookahead_distance_base + speedAlongTrack * M.settings.pacenote_playback.speed_multiplier)
@@ -419,6 +422,8 @@ end
 local function connectToMicServer()
     if M.micServer ~= nil then
         log('I', M.logTag, 'already connected to server')
+        M.guiSendMicData()
+        return
     end
 
     M.micServer = assert(socket.tcp())
@@ -435,6 +440,20 @@ local function connectToMicServer()
     if M.scenarioPath ~= nil then
         M.serverUpdateMission()
     end
+end
+
+local function disconnectFromMicServer()
+    if M.micServer == nil then
+        log('I', M.logTag, 'not connected to server')
+        M.guiSendMicData()
+        return
+    end
+
+    M.micServer:close()
+    M.micServer = nil
+    log('I', M.logTag, 'disconnected from server')
+
+    M.guiSendMicData()
 end
 
 local function serverUpdateMission()
@@ -587,6 +606,7 @@ M.sortPacenotes = sortPacenotes
 M.savePacenoteData = savePacenoteData
 M.onScenarioChange = onScenarioChange
 M.connectToMicServer = connectToMicServer
+M.disconnectFromMicServer = disconnectFromMicServer
 M.serverCloseMission = serverCloseMission
 M.serverUpdateMission = serverUpdateMission
 M.serverDeleteLastPacenote = serverDeleteLastPacenote

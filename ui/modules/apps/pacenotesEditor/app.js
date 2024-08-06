@@ -7,6 +7,7 @@ angular.module('beamng.apps')
     link: function (scope, element, attrs) {
 
       scope.pacenotes_data = {};
+      scope.isMicServerConnected = false;
 
       scope.followNote = true;
 
@@ -16,14 +17,12 @@ angular.module('beamng.apps')
 
       let watchEnabled = true;
 
-      scope.updateMicConnection = function (connected) {
-        const button = document.querySelector('#connect-to-mic-server');
-        button.disabled = connected;
-        button.textContent = connected ? 'Connected' : 'Connect to Mic Server';
-      }
-
-      scope.connectToMicServer = function () {
-        bngApi.engineLua('extensions.scripts_sopo__pacenotes_extension.connectToMicServer()');
+      scope.toggleMicServerConnection = function () {
+        if (scope.isMicServerConnected) {
+          bngApi.engineLua('extensions.scripts_sopo__pacenotes_extension.disconnectFromMicServer()');
+        } else {
+          bngApi.engineLua('extensions.scripts_sopo__pacenotes_extension.connectToMicServer()');
+        }
       }
 
       scope.deleteLastPacenote = function () {
@@ -157,7 +156,7 @@ angular.module('beamng.apps')
       });
 
       scope.$on('MicDataUpdate', function(event, args) {
-        scope.updateMicConnection(args.connected);
+        scope.isMicServerConnected = args.connected;
       });
 
       scope.$on('RallyDataUpdate', function(event, args) {

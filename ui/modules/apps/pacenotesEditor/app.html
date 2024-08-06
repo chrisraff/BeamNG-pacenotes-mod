@@ -22,6 +22,10 @@
             margin-left: 10px;
         }
 
+        .pacenotes-editor details > summary {
+            margin-left: -10px;
+        }
+
         /* TODO switch to flexboxes so table height can be smarter */
         #pacenotes-list {
             height: 300px;
@@ -102,7 +106,15 @@
                 </p>
         </details>
 
-        <button id="connect-to-mic-server" ng-click="connectToMicServer()">Connect to Mic Server</button>
+        <details id="mic-server-panel" open>
+            <summary>
+                Mic Server: <span id="mic-state">{{isMicServerConnected ? 'Connected' : 'Disconnected'}}</span>
+            </summary>
+            <button id="connect-disconnect-mic-server" ng-click="toggleMicServerConnection()" ng-model-options="{ debounce: 100 }">
+                {{isMicServerConnected ? 'Disconnect' : 'Connect'}}
+            </button>
+        </details>
+
         <div id="recce-content" class="hide">
             <button id="recce-save" ng-click="setSaveRecce()">Save Recce</button>
             <button id="" ng-click="deleteLastPacenote()" class="hide">Delete Last Pacenote</button>
