@@ -202,13 +202,39 @@ local function copyRally(newId)
     M.guiSendMissionData()
 end
 
+local function deleteRally()
+    log('I', M.logTag, 'Deleting rally')
+
+    local path = 'art/sounds/' .. M.rallyId
+    if FS:directoryExists(path) and FS:fileExists(path .. '/pacenotes.json') then
+        FS:removeFile(path .. '/pacenotes.json')
+
+        -- Remove all files in /pacenotes/ directory
+        local files = FS:findFiles(path .. '/pacenotes', '*.*', -1, true, false)
+        for _, file in ipairs(files) do
+            FS:removeFile(file)
+        end
+    end
+
+    M.rallyId = nil
+    M.mode = "none"
+
+    M.checkpoints_array = nil
+    M.pacenotes_data = nil
+
+    clearQueue()
+
+    M.serverCloseMission()
+    M.guiSendMissionData()
+end
+
 local function cleanup()
     log('I', M.logTag, 'closing rally')
     M.mode = "none"
     M.rallyId = nil
     M.scenarioHandle = nil
 
-    M.backup_pacenotes_data = M.pacenotes_data
+    jsonWriteFile('art/sounds/' .. M.rallyId .. '/pacenotes_autosave.json', M.pacenotes_data)
     M.pacenotes_data = nil
 
     clearQueue()
@@ -655,6 +681,7 @@ end
 M.loadRally = loadRally
 M.newRally = newRally
 M.copyRally = copyRally
+M.deleteRally = deleteRally
 M.onExtensionLoaded = onExtensionLoaded
 M.onAnyMissionChanged = onAnyMissionChanged
 M.onUiChangedState = onUiChangedState

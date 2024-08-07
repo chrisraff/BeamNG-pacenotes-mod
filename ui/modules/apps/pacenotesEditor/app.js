@@ -44,6 +44,11 @@ angular.module('beamng.apps')
         bngApi.engineLua('extensions.scripts_sopo__pacenotes_extension.savePacenoteData()');
       }
 
+      scope.deleteRally = function () {
+        bngApi.engineLua('extensions.scripts_sopo__pacenotes_extension.deleteRally()');
+        scope.deleteConfirmationInput = '';
+      }
+
       scope.setRallyChanged = function (isRallyChanged) {
         scope.isRallyChanged = isRallyChanged;
         bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.guiConfig.isRallyChanged = ${isRallyChanged}`);

@@ -101,6 +101,15 @@
             </p>
             <button ng-click="loadRally()">Load</button>
             <button ng-click="saveAsRally()">Save As</button>
+
+            <details>
+                <summary>Delete</summary>
+
+                <p>THIS CANNOT BE UNDONE. Type 'Delete' into the text box and press the button to delete the pacenotes for this stage.</p>
+
+                <input type="text" ng-model="deleteConfirmationInput">
+                <button id="delete-pacenotes" ng-click="deleteRally()" ng-disabled="deleteConfirmationInput !== 'Delete'">Delete</button>
+            </details>
         </details>
 
         <details>
