@@ -176,7 +176,6 @@ angular.module('beamng.apps')
 
       scope.$on('RallyDataUpdate', function(event, args) {
         scope.distance = args.distance;
-        document.querySelector('#pacenotes-count').innerHTML = args.pacenoteNumber;
       });
 
       scope.$on('PacenoteDataUpdate', function(event, args) {

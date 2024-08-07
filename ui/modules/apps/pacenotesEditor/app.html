@@ -19,6 +19,7 @@
         }
 
         .pacenotes-editor details {
+            margin: 5px;
             margin-left: 10px;
         }
 
@@ -100,7 +101,7 @@
                 <input type="text" id="newRallyId" ng-model="newRallyId">
             </p>
             <button ng-click="loadRally()">Load</button>
-            <button ng-click="saveAsRally()">Save As</button>
+            <button ng-click="saveAsRally()" ng-show="mode !== 'none'">Save As</button>
 
             <details>
                 <summary>Delete</summary>
@@ -133,16 +134,7 @@
             </button>
         </details>
 
-        <div id="recce-content" class="hide">
-            <button id="recce-save" ng-click="setSaveRecce()">Save Recce</button>
-            <button id="" ng-click="deleteLastPacenote()" class="hide">Delete Last Pacenote</button>
-
-            <p>
-                Number of Pacenotes: <span id="pacenotes-count"></span>
-            </p>
-        </div>
-
-        <div ng-show="pacenotes_data != {}">
+        <div ng-show="mode !== 'none'">
             <div id="pacenotes-list">
                 <table>
                     <thead>
@@ -180,12 +172,14 @@
             </button>
         </div>
 
-        <p>
+        <div ng-show="mode !== 'none'">
             Distance: <span id="distance">{{distance.toFixed(2)}}</span>
             <button ng-click="jumpToDistance()">Jump To</button>
-        </p>
 
-        <button ng-click="saveRally()" ng-disabled="!isRallyChanged">Save Pacenotes</button>
+            <button ng-click="saveRally()" ng-disabled="!isRallyChanged" ng-show="mode === 'rally'">Save Pacenotes</button>
+            <button id="recce-save" ng-click="setSaveRecce()" ng-show="mode === 'recce'">Save Recce</button>
+        </div>
+
     </details>
 
 </div>

@@ -230,11 +230,13 @@ end
 
 local function cleanup()
     log('I', M.logTag, 'closing rally')
+
+    if M.guiConfig.isRallyChanged then
+        jsonWriteFile('art/sounds/' .. M.rallyId .. '/pacenotes_autosave.json', M.pacenotes_data)
+    end
     M.mode = "none"
     M.rallyId = nil
     M.scenarioHandle = nil
-
-    jsonWriteFile('art/sounds/' .. M.rallyId .. '/pacenotes_autosave.json', M.pacenotes_data)
     M.pacenotes_data = nil
 
     clearQueue()
@@ -661,7 +663,7 @@ local function guiSendMicData()
 end
 
 local function guiSendRallyData()
-    guihooks.trigger('RallyDataUpdate', {distance=M.last_distance, pacenoteNumber=#M.pacenotes_data})
+    guihooks.trigger('RallyDataUpdate', {distance=M.last_distance})
 end
 
 local function guiSendPacenoteData()
