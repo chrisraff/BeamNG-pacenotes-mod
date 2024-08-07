@@ -225,7 +225,11 @@ local function getPath(scenario)
         return scenario.sourceFile:sub(1, -6) -- remove .json from the source file
     end
     if scenario.directory and scenario.scenarioName then
-        return scenario.directory .. '/' .. scenario.scenarioName
+        local directory = scenario.directory
+        if directory:sub(1, 7) == "/levels" then
+            directory = directory:sub(9)
+        end
+        return directory .. '/' .. scenario.scenarioName
     end
 
     return nil
