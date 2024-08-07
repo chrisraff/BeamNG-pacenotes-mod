@@ -328,8 +328,10 @@ local function updateRally(dt)
         local checkpointDirection = vec3(nextCheckpoint[1] - checkpoint[1], nextCheckpoint[2] - checkpoint[2], nextCheckpoint[3] - checkpoint[3]):normalized()
         speedAlongTrack = vel:dot(checkpointDirection)
 
-        -- cap this number at 90 - some resets can cause big numbers
-        speedAlongTrack = math.min(speedAlongTrack, 90)
+        -- if this speed is above 90, assume it is a reset and ignore it
+        if speedAlongTrack > 90 then
+            speedAlongTrack = 0
+        end
     end
 
     queueUpUntil(checkpoint[4] + M.settings.pacenote_playback.lookahead_distance_base + speedAlongTrack * M.settings.pacenote_playback.speed_multiplier)
