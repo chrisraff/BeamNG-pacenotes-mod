@@ -87,12 +87,21 @@
         <summary>Pacenotes</summary>
 
         <p>
-            Rally ID: <span id="rally-id"></span>
+            Rally ID: {{rallyId}}
         </p>
         <p>
-            Mode:
-            <span id="rally-mode"></span>
+            Mode: {{mode}}
         </p>
+
+        <details id="load-save-panel">
+            <summary>Load / Save As</summary>
+            <p>
+                <label for="filename">RallyId:</label>
+                <input type="text" id="newRallyId" ng-model="newRallyId">
+            </p>
+            <button ng-click="loadRally()">Load</button>
+            <button ng-click="saveAsRally()">Save As</button>
+        </details>
 
         <details>
             <summary>Playback tuning</summary>
@@ -130,7 +139,7 @@
                     <thead>
                         <tr>
                             <th>Name</th>
-                            <th>D</th>
+                            <th>Distance</th>
                         </tr>
                     </thead>
                     <tbody>

@@ -7,6 +7,8 @@ angular.module('beamng.apps')
     link: function (scope, element, attrs) {
 
       scope.pacenotes_data = {};
+      scope.rallyId = '';
+      scope.mode = 'none';
       scope.isMicServerConnected = false;
 
       scope.followNote = true;
@@ -27,6 +29,14 @@ angular.module('beamng.apps')
 
       scope.deleteLastPacenote = function () {
         bngApi.engineLua('extensions.scripts_sopo__pacenotes_extension.serverDeleteLastPacenote()');
+      }
+
+      scope.loadRally = function () {
+        bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.loadRally('${scope.newRallyId}')`);
+      }
+
+      scope.saveAsRally = function () {
+        bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.copyRally('${scope.newRallyId}')`);
       }
 
       scope.saveRally = function () {
@@ -75,7 +85,7 @@ angular.module('beamng.apps')
 
           // only update the appropriate values
           bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.pacenotes_data[${scope.selectedRowIndex+1}].d = ${pacenote.d}`);
-          if (pacenote.name !== undefined && pacenote.name !== '')
+          if (pacenote.name !== undefined || pacenote.name !== '')
           {
             bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.pacenotes_data[${scope.selectedRowIndex+1}].name = "${pacenote.name}"`);
           }
@@ -101,7 +111,7 @@ angular.module('beamng.apps')
           return;
         }
         scope.selectedRowIndex = index;
-        bngApi.engineLua(`Engine.Audio.playOnce('AudioGui', 'art/sounds/' .. extensions.scripts_sopo__pacenotes_extension.scenarioPath .. '/pacenotes/${scope.pacenotes_data[index].wave_name}', extensions.scripts_sopo__pacenotes_extension.settings.sound_data)`);
+        bngApi.engineLua(`Engine.Audio.playOnce('AudioGui', 'art/sounds/' .. extensions.scripts_sopo__pacenotes_extension.rallyId .. '/pacenotes/${scope.pacenotes_data[index].wave_name}', extensions.scripts_sopo__pacenotes_extension.settings.sound_data)`);
       }
 
       scope.deleteContinueDistance = function () {
@@ -139,8 +149,8 @@ angular.module('beamng.apps')
       // gui hooks
 
       scope.$on('MissionDataUpdate', function(event, args) {
-        document.querySelector('#rally-id').innerHTML = args.mission_id;
-        document.querySelector('#rally-mode').innerHTML = args.mode;
+        scope.rallyId = args.rallyId;
+        scope.mode = args.mode;
 
         document.querySelector('#playback-lookahead').value = args.playback_lookahead;
         document.querySelector('#speed-multiplier').value = args.speed_multiplier;

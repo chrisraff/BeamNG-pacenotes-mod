@@ -6,7 +6,7 @@ local M = {}
 
 
 M.scenarioHandle = nil
-M.scenarioPath = nil
+M.rallyId = nil
 M.mode = "none"
 M.uiState = "none"
 
@@ -100,6 +100,8 @@ end
 
 local function resetRally()
     log('I', M.logTag, 'resetRally called')
+
+    -- find the closest checkpoint
     local my_veh = be:getPlayerVehicle(0)
     if my_veh == nil then return end
 
@@ -115,12 +117,13 @@ local function resetRally()
         end
     end
 
+    -- setup distance tracking from checkpoints
     M.last_distance = M.checkpoints_array[M.checkpoint_index][4]
-
     M.distance_of_last_queued_note = M.last_distance
 
     M.last_position = position
 
+    -- reset the audio queue
     clearQueue()
 end
 
@@ -134,32 +137,75 @@ local function resetRecce()
     M.guiSendPacenoteData()
 end
 
-local function loadRally()
-    local file = jsonReadFile('art/sounds/' .. M.scenarioPath .. '/pacenotes.json')
-    if file then
-        M.mode = "rally"
+local function loadOrNewRally()
+    local result = M.loadRally(M.rallyId)
 
-        M.checkpoints_array = file[1]
-        M.pacenotes_data = file[2]
-
-        resetRally()
-
-        M.guiConfig.isRallyChanged = false
-
-        M.guiSendPacenoteData()
-        M.guiSendGuiData()
-    else
-        -- if we don't have a file but we're in a mission, then we're in recce mode
-        M.mode = "recce"
-
-        resetRecce()
+    if not result then
+        M.newRally()
     end
+end
+
+local function loadRally(rallyId)
+    local file = jsonReadFile('art/sounds/' .. rallyId .. '/pacenotes.json')
+
+    if not file then
+        log('E', M.logTag, 'failed to load pacenote data')
+        return false
+    end
+
+    M.rallyId = rallyId
+    M.mode = "rally"
+
+    M.checkpoints_array = file[1]
+    M.pacenotes_data = file[2]
+
+    resetRally()
+
+    M.guiConfig.isRallyChanged = false
+
+    M.guiSendMissionData()
+    M.guiSendPacenoteData()
+    M.guiSendGuiData()
+
+    return true
+end
+
+local function newRally()
+    M.mode = "recce"
+
+    resetRecce()
+end
+
+local function copyRally(newId)
+    local oldId = M.rallyId
+    M.rallyId = newId
+
+    local oldPath = 'art/sounds/' .. oldId
+    local newPath = 'art/sounds/' .. newId
+
+    -- copy the folder
+    if FS:directoryExists(oldPath) then
+        FS:copyFile(oldPath .. '/pacenotes.json', newPath .. '/pacenotes.json')
+        local files = FS:findFiles(oldPath .. '/pacenotes', '*.*', -1, true, false)
+        for _, file in ipairs(files) do
+            local relativePath = file:sub(#oldPath + 2)
+            local newFilePath = newPath .. '/' .. relativePath
+            FS:copyFile(file, newFilePath)
+        end
+    end
+
+    -- save the pacenotes
+    M.savePacenoteData()
+
+    M.guiConfig.isRallyChanged = false
+    M.guiSendGuiData()
+    M.guiSendMissionData()
 end
 
 local function cleanup()
     log('I', M.logTag, 'closing rally')
     M.mode = "none"
-    M.scenarioPath = nil
+    M.rallyId = nil
     M.scenarioHandle = nil
 
     M.backup_pacenotes_data = M.pacenotes_data
@@ -189,19 +235,21 @@ local function setup(scenarioOrMission)
     if scenarioOrMission then
         local newPath = getPath(scenarioOrMission)
         -- don't reset the scenario if it's already loaded
-        if M.scenarioPath == newPath then return end
+        if M.rallyId == newPath then return end
 
         log('I', M.logTag, 'rally scenario path: ' .. newPath)
         M.scenarioHandle = scenarioOrMission
-        M.scenarioPath = getPath(scenarioOrMission)
+        M.rallyId = getPath(scenarioOrMission)
     end
 
-    if M.scenarioPath then
-        loadRally()
+    if M.rallyId then
+        loadOrNewRally()
     end
     M.serverUpdateMission()
     M.guiSendMissionData()
 end
+
+-- mission / scenario callbacks
 
 local function onAnyMissionChanged(started, mission, userSettings)
     log('I', M.logTag, 'onAnyMissionChanged: ' .. started)
@@ -230,6 +278,8 @@ local function onUiChangedState(curUIState, prevUIState)
     jsonWriteFile('settings/sopo_pacenotes/settings.json', M.settings)
 end
 
+-- update functions
+
 local function updateRally(dt)
     if M.mode ~= "rally" then return end
 
@@ -240,7 +290,7 @@ local function updateRally(dt)
 
     M.tick = M.tick - 0.1
 
-    if M.scenarioPath == nil then return end
+    if M.rallyId == nil then return end
 
     local my_veh = be:getPlayerVehicle(0)
     if my_veh == nil then return end
@@ -293,7 +343,7 @@ local function updateAudioQueue(dt)
 
     -- play the sound
     if not currentSound.played then
-        local path = 'art/sounds/' .. M.scenarioPath .. '/pacenotes/' .. currentSound.pacenote.wave_name
+        local path = 'art/sounds/' .. M.rallyId .. '/pacenotes/' .. currentSound.pacenote.wave_name
         local result = Engine.Audio.playOnce('AudioGui', path, M.settings.sound_data)
 
         if result ~= nil then
@@ -326,7 +376,7 @@ local function updateRecce(dt)
 
     M.tick = M.tick - 0.1
 
-    if M.scenarioPath == nil then return end
+    if M.rallyId == nil then return end
 
     local my_veh = be:getPlayerVehicle(0)
     if my_veh == nil then return end
@@ -405,9 +455,9 @@ local function sortPacenotes()
 end
 
 local function savePacenoteData()
-    if M.scenarioPath == nil then return end
+    if M.rallyId == nil then return end
 
-    local file = jsonWriteFile('art/sounds/' .. M.scenarioPath .. '/pacenotes.json', {M.checkpoints_array, M.pacenotes_data})
+    local file = jsonWriteFile('art/sounds/' .. M.rallyId .. '/pacenotes.json', {M.checkpoints_array, M.pacenotes_data})
     if file then
         log('I', M.logTag, 'saved pacenote data')
         M.guiConfig.isRallyChanged = false
@@ -437,7 +487,7 @@ local function connectToMicServer()
 
     M.guiSendMicData()
 
-    if M.scenarioPath ~= nil then
+    if M.rallyId ~= nil then
         M.serverUpdateMission()
     end
 end
@@ -458,7 +508,7 @@ end
 
 local function serverUpdateMission()
     if M.micServer ~= nil then
-        M.micServer:send('mission ' .. M.scenarioPath)
+        M.micServer:send('mission ' .. M.rallyId)
 
         -- in case we are recording more pacenotes, set the index
         if M.mode == "rally" then
@@ -556,11 +606,11 @@ end
 
 local function guiSendMissionData()
     log('I', M.logTag, 'sending gui data')
-    local mission_id = ''
-    if M.scenarioPath then mission_id = M.scenarioPath end
+    local rallyId = ''
+    if M.rallyId then rallyId = M.rallyId end
     local data = {
         mode=M.mode,
-        mission_id=mission_id,
+        rallyId=rallyId,
         playback_lookahead=M.settings.pacenote_playback.lookahead_distance_base,
         speed_multiplier=M.settings.pacenote_playback.speed_multiplier
     }
@@ -596,6 +646,9 @@ local function guiInit()
     M.guiSendGuiData()
 end
 
+M.loadRally = loadRally
+M.newRally = newRally
+M.copyRally = copyRally
 M.onExtensionLoaded = onExtensionLoaded
 M.onAnyMissionChanged = onAnyMissionChanged
 M.onUiChangedState = onUiChangedState
