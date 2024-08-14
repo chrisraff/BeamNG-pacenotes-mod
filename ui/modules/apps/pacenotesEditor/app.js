@@ -58,9 +58,9 @@ angular.module('beamng.apps')
         // find the closest pacenote to the given distance
         let distances = document.querySelectorAll('.distance');
         let closestIndex = 0;
-        let closestDistance = Math.abs(parseFloat(distances[0].textContent) - scope.distance);
+        let closestDistance = Math.abs(distances[0].querySelector('input').value - scope.distance);
         distances.forEach((distance, index) => {
-          let currentDistance = Math.abs(parseFloat(distance.textContent) - scope.distance);
+          let currentDistance = Math.abs(distance.querySelector('input').value - scope.distance);
           if (currentDistance < closestDistance) {
             closestDistance = currentDistance;
             closestIndex = index;
@@ -90,7 +90,11 @@ angular.module('beamng.apps')
 
           // only update the appropriate values
           bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.pacenotes_data[${scope.selectedRowIndex+1}].d = ${pacenote.d}`);
-          if (pacenote.name !== undefined || pacenote.name !== '')
+          if (pacenote.name == '' || pacenote.name === undefined)
+          {
+            bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.pacenotes_data[${scope.selectedRowIndex+1}].name = nil`);
+          }
+          else
           {
             bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.pacenotes_data[${scope.selectedRowIndex+1}].name = "${pacenote.name}"`);
           }

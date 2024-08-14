@@ -163,6 +163,8 @@ local function loadRally(rallyId)
 
     M.guiConfig.isRallyChanged = false
 
+    M.serverUpdateMission()
+
     M.guiSendMissionData()
     M.guiSendPacenoteData()
     M.guiSendGuiData()
