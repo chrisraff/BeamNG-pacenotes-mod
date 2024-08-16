@@ -88,7 +88,7 @@
         <summary>Pacenotes</summary>
 
         <p>
-            Rally ID: {{rallyId}}
+            Rally ID: {{level}} / {{rallyId}}
         </p>
         <p>
             Mode: {{mode}}
@@ -97,8 +97,13 @@
         <details id="load-save-panel">
             <summary>Load / Save As</summary>
             <p>
-                <label for="filename">RallyId:</label>
-                <input type="text" id="newRallyId" ng-model="newRallyId">
+                <label for="filename">RallyId: {{level}}/</label>
+                <input list="rallyPathsList" type="text" id="newRallyId" ng-model="newRallyId">
+
+                <!-- Datalist for autocomplete -->
+                <datalist id="rallyPathsList">
+                    <option ng-repeat="path in rallyPaths" value="{{path}}">
+                </datalist>
             </p>
             <button ng-click="loadRally()">Load</button>
             <button ng-click="saveAsRally()" ng-show="mode !== 'none'">Save As</button>

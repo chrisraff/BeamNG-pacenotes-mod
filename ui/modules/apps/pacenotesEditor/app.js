@@ -7,7 +7,9 @@ angular.module('beamng.apps')
     link: function (scope, element, attrs) {
 
       scope.pacenotes_data = {};
+      scope.level = '';
       scope.rallyId = '';
+      scope.rallyPaths = [];
       scope.mode = 'none';
       scope.isMicServerConnected = false;
 
@@ -120,7 +122,7 @@ angular.module('beamng.apps')
           return;
         }
         scope.selectedRowIndex = index;
-        bngApi.engineLua(`Engine.Audio.playOnce('AudioGui', 'art/sounds/' .. extensions.scripts_sopo__pacenotes_extension.rallyId .. '/pacenotes/${scope.pacenotes_data[index].wave_name}', extensions.scripts_sopo__pacenotes_extension.settings.sound_data)`);
+        bngApi.engineLua(`Engine.Audio.playOnce('AudioGui', 'art/sounds/' .. getCurrentLevelIdentifier() .. '/' .. extensions.scripts_sopo__pacenotes_extension.rallyId .. '/pacenotes/${scope.pacenotes_data[index].wave_name}', extensions.scripts_sopo__pacenotes_extension.settings.sound_data)`);
       }
 
       scope.deleteContinueDistance = function () {
@@ -135,10 +137,8 @@ angular.module('beamng.apps')
 
         // toggle the disabled flag
         if (scope.pacenotes_data[scope.selectedRowIndex].disabled === undefined) {
-          // bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.pacenotes_data[${scope.selectedRowIndex+1}].disabled = true`);
           scope.pacenotes_data[scope.selectedRowIndex].disabled = true;
         } else {
-          // bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.pacenotes_data[${scope.selectedRowIndex+1}].disabled = nil`);
           delete scope.pacenotes_data[scope.selectedRowIndex].disabled;
         }
 
@@ -158,7 +158,9 @@ angular.module('beamng.apps')
       // gui hooks
 
       scope.$on('MissionDataUpdate', function(event, args) {
+        scope.level = args.level;
         scope.rallyId = args.rallyId;
+        scope.rallyPaths = args.rallyPaths;
         scope.mode = args.mode;
 
         document.querySelector('#playback-lookahead').value = args.playback_lookahead;

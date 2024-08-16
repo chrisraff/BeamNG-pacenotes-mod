@@ -11,7 +11,7 @@ M.mode = "none"
 M.uiState = "none"
 
 M.settings = {
-    settingsVersion = 0,
+    settingsVersion = 1,
     sound_data = {
         volume = 10
     },
@@ -19,16 +19,14 @@ M.settings = {
     pacenote_playback = {
         lookahead_distance_base = 60,
         speed_multiplier = 3
-    }
+    },
+    rallyPaths = {}
 }
 
 M.guiConfig = {
     panelOpen = true,
     isRallyChanged = false,
 }
-
--- debugging sudden queue all
-M.maxSpeedAlongTrack = 0
 
 M.checkpoints_array = nil
 M.checkpoint_index = nil
@@ -63,7 +61,7 @@ local function onExtensionLoaded()
 
     -- load the settings
     local settingsFile = jsonReadFile('settings/sopo_pacenotes/settings.json')
-    if settingsFile and settingsFile.settingsVersion == 0 then
+    if settingsFile and settingsFile.settingsVersion == M.settings.settingsVersion then
         M.settings = settingsFile
     end
 end
@@ -146,7 +144,7 @@ local function loadOrNewRally()
 end
 
 local function loadRally(rallyId)
-    local file = jsonReadFile('art/sounds/' .. rallyId .. '/pacenotes.json')
+    local file = jsonReadFile('art/sounds/' .. getCurrentLevelIdentifier() .. '/' .. rallyId .. '/pacenotes.json')
 
     if not file then
         log('E', M.logTag, 'failed to load pacenote data')
@@ -182,8 +180,8 @@ local function copyRally(newId)
     local oldId = M.rallyId
     M.rallyId = newId
 
-    local oldPath = 'art/sounds/' .. oldId
-    local newPath = 'art/sounds/' .. newId
+    local oldPath = 'art/sounds/' .. getCurrentLevelIdentifier() .. '/' .. oldId
+    local newPath = 'art/sounds/' .. getCurrentLevelIdentifier() .. '/' .. newId
 
     -- copy the folder
     if FS:directoryExists(oldPath) then
@@ -207,7 +205,7 @@ end
 local function deleteRally()
     log('I', M.logTag, 'Deleting rally')
 
-    local path = 'art/sounds/' .. M.rallyId
+    local path = 'art/sounds/' .. getCurrentLevelIdentifier() .. '/'.. M.rallyId
     if FS:directoryExists(path) and FS:fileExists(path .. '/pacenotes.json') then
         FS:removeFile(path .. '/pacenotes.json')
 
@@ -234,7 +232,7 @@ local function cleanup()
     log('I', M.logTag, 'closing rally')
 
     if M.guiConfig.isRallyChanged then
-        jsonWriteFile('art/sounds/' .. M.rallyId .. '/pacenotes_autosave.json', M.pacenotes_data)
+        jsonWriteFile('art/sounds/' .. getCurrentLevelIdentifier() .. '/' .. M.rallyId .. '/pacenotes_autosave.json', M.pacenotes_data)
     end
     M.mode = "none"
     M.rallyId = nil
@@ -268,12 +266,33 @@ end
 local function setup(scenarioOrMission)
     if scenarioOrMission then
         local newPath = getPath(scenarioOrMission)
-        -- don't reset the scenario if it's already loaded
-        if M.rallyId == newPath then return end
 
-        log('I', M.logTag, 'rally scenario path: ' .. newPath)
+        -- Extract the first part of the path (before the first '/')
+        local level, remainingPath = newPath:match("([^/]+)/(.+)")
+
+        if M.settings.rallyPaths[level] == nil then
+            M.settings.rallyPaths[level] = {}
+        end
+
+        -- Only add remainingPath to rallyPaths if it is not already in the list
+        local pathExists = false
+        for _, path in ipairs(M.settings.rallyPaths[level]) do
+            if path == remainingPath then
+                pathExists = true
+                break
+            end
+        end
+
+        if not pathExists then
+            table.insert(M.settings.rallyPaths[level], remainingPath)
+        end
+
+        -- Don't reset the scenario if it's already loaded
+        if M.rallyId == remainingPath then return end
+
+        log('I', M.logTag, 'rally scenario path: ' .. remainingPath)
         M.scenarioHandle = scenarioOrMission
-        M.rallyId = getPath(scenarioOrMission)
+        M.rallyId = remainingPath
     end
 
     if M.rallyId then
@@ -379,7 +398,7 @@ local function updateAudioQueue(dt)
 
     -- play the sound
     if not currentSound.played then
-        local path = 'art/sounds/' .. M.rallyId .. '/pacenotes/' .. currentSound.pacenote.wave_name
+        local path = 'art/sounds/' .. getCurrentLevelIdentifier() .. '/' .. M.rallyId .. '/pacenotes/' .. currentSound.pacenote.wave_name
         local result = Engine.Audio.playOnce('AudioGui', path, M.settings.sound_data)
 
         if result ~= nil then
@@ -493,7 +512,7 @@ end
 local function savePacenoteData()
     if M.rallyId == nil then return end
 
-    local file = jsonWriteFile('art/sounds/' .. M.rallyId .. '/pacenotes.json', {M.checkpoints_array, M.pacenotes_data})
+    local file = jsonWriteFile('art/sounds/' .. getCurrentLevelIdentifier() .. '/' .. M.rallyId .. '/pacenotes.json', {M.checkpoints_array, M.pacenotes_data})
     if file then
         log('I', M.logTag, 'saved pacenote data')
         M.guiConfig.isRallyChanged = false
@@ -544,7 +563,7 @@ end
 
 local function serverUpdateMission()
     if M.micServer ~= nil then
-        M.micServer:send('mission ' .. M.rallyId)
+        M.micServer:send('mission ' .. getCurrentLevelIdentifier() .. '/' .. M.rallyId)
 
         -- in case we are recording more pacenotes, set the index
         if M.mode == "rally" then
@@ -646,6 +665,8 @@ local function guiSendMissionData()
     if M.rallyId then rallyId = M.rallyId end
     local data = {
         mode=M.mode,
+        level=getCurrentLevelIdentifier(),
+        rallyPaths=M.settings.rallyPaths[getCurrentLevelIdentifier()],
         rallyId=rallyId,
         playback_lookahead=M.settings.pacenote_playback.lookahead_distance_base,
         speed_multiplier=M.settings.pacenote_playback.speed_multiplier
