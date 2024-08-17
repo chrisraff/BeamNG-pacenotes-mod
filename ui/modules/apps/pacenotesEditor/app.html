@@ -54,19 +54,18 @@
             z-index: 1;
         }
 
-        /* Double select selected-row for priority over disabled row */
-        .pacenotes-editor .selected-row.selected-row {
+        .pacenotes-editor .selected-row {
             background-color: rgba(52, 51, 95, 0.7);
             border: 2px solid white;
         }
 
-        .pacenotes-editor .disabled-row {
-            background-color: rgba(82, 82, 82, 0.4);
-            color: gray;
-            text-decoration: line-through;
+        .pacenotes-editor .selected-row.disabled-row {
+            background-color: rgba(105, 51, 52, 0.7);
         }
 
-        .pacenotes-editor .disabled-row input {
+        .pacenotes-editor .disabled-row {
+            background-color: rgba(105, 59, 59, 0.4);
+            color: gray;
             text-decoration: line-through;
         }
 
@@ -79,8 +78,53 @@
             color: rgba(240, 240, 240, 0.9);
         }
 
+        .pacenotes-editor .disabled-row input {
+            text-decoration: line-through;
+        }
+
         .pacenotes-editor .disabled-row input::placeholder {
             text-decoration: line-through;
+        }
+
+        .dropdown-container {
+            position: relative;
+        }
+
+        .dropdown-container input {
+            width: 100%;
+            padding: 5px;
+            box-sizing: border-box;
+        }
+
+        .dropdown-container ul {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            border: 1px solid #ccc;
+            background-color: rgba(0, 0, 0, 0.8);
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            max-height: 150px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none; /* Hide by default */
+        }
+
+        .dropdown-container ul.visible {
+            display: block;
+        }
+
+        .dropdown-container li {
+            padding: 5px;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+
+        .dropdown-container li:hover {
+            background-color: rgba(0, 0, 0, 0.95);
+            border: 1px solid white;
         }
     </style>
 
@@ -96,15 +140,26 @@
 
         <details id="load-save-panel">
             <summary>Load / Save As</summary>
-            <p>
+            <div style="display: flex; padding: 10px;">
                 <label for="filename">RallyId: {{level}}/</label>
-                <input list="rallyPathsList" type="text" id="newRallyId" ng-model="newRallyId">
+                <div ng-app="pacenotesEditor" ng-controller="DropdownController" style="flex-grow: 1;">
+                    <div class="dropdown-container">
+                        <input
+                            id="filename"
+                            type="text"
+                            ng-model="newRallyId"
+                            ng-keyup="filterOptions()"
+                            ng-focus="onFocus()"
+                            ng-blur="onBlur()">
 
-                <!-- Datalist for autocomplete -->
-                <datalist id="rallyPathsList">
-                    <option ng-repeat="path in rallyPaths" value="{{path}}">
-                </datalist>
-            </p>
+                        <ul ng-class="{visible: filteredOptions.length > 0}">
+                            <li ng-repeat="option in filteredOptions" ng-click="selectOption(option)">
+                                {{option}}
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
             <button ng-click="loadRally()">Load</button>
             <button ng-click="saveAsRally()" ng-show="mode !== 'none'">Save As</button>
 

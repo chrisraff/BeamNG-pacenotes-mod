@@ -1,4 +1,34 @@
 angular.module('beamng.apps')
+.controller('DropdownController', ['$scope', function(scope) {
+  scope.filteredOptions = [];
+
+  scope.filterOptions = function() {
+    if (scope.newRallyId !== undefined) {
+      scope.filteredOptions = scope.rallyPaths.filter(function(option) {
+        return option.toLowerCase().includes(scope.newRallyId.toLowerCase());
+      });
+    } else {
+      scope.filteredOptions = [];
+    }
+  };
+
+  scope.selectOption = function(option) {
+    scope.newRallyId = option;
+    scope.filteredOptions = [];
+  };
+
+  scope.onFocus = function() {
+    scope.filterOptions();
+  };
+
+  scope.onBlur = function() {
+    setTimeout(function() {
+      scope.$apply(function() {
+        scope.filteredOptions = [];
+      });
+    }, 200);
+  };
+}])
 .directive('pacenotesEditor', ['$timeout', function ($timeout) {
   return {
     templateUrl: '/ui/modules/apps/pacenotesEditor/app.html',
@@ -166,7 +196,6 @@ angular.module('beamng.apps')
         document.querySelector('#playback-lookahead').value = args.playback_lookahead;
         document.querySelector('#speed-multiplier').value = args.speed_multiplier;
 
-        document.querySelector('#recce-content').classList.toggle('hide', args.mode !== 'recce');
         document.querySelector('#recce-save').disabled = false;
         document.querySelector('#recce-save').textContent = 'Save Recce';
       });
