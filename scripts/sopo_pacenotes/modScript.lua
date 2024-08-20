@@ -3,4 +3,3 @@
 -- file, You can obtain one at http://beamng.com/bCDDL-1.1.txt
 
 load('scripts/sopo_pacenotes/extension')
-setExtensionUnloadMode('scripts/sopo_pacenotes/extension', "manual")

@@ -59,6 +59,8 @@ local micServer = nil
 local function onExtensionLoaded()
     log('I', M.logTag, '>>>>>>>>>>>>>>>>>>>>> onExtensionLoaded from sopo ext')
 
+    setExtensionUnloadMode(M, 'manual')
+
     -- load the settings
     local settingsFile = jsonReadFile('settings/sopo_pacenotes/settings.json')
     if settingsFile and settingsFile.settingsVersion == M.settings.settingsVersion then
