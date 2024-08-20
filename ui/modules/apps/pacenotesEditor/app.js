@@ -50,6 +50,7 @@ angular.module('beamng.apps')
       scope.rallyId = '';
       scope.mode = 'none';
       scope.isMicServerConnected = false;
+      scope.closeIgnoreUnsavedRallyChanges = false;
       scope.SharedDataService = SharedDataService;
 
       scope.followNote = true;
@@ -79,6 +80,31 @@ angular.module('beamng.apps')
       scope.saveAsRally = function () {
         bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.copyRally('${SharedDataService.newRallyId}')`);
       }
+
+      scope.closeRally = function() {
+        if (scope.isRallyChanged && !scope.closeIgnoreUnsavedRallyChanges) {
+          bngApi.engineLua(`guihooks.trigger('toastrMsg', {type = "error", title = "Unsaved Changes", msg = "Closing this rally will cause loss of unsaved work.", config = {timeOut = 7000}})`);
+          return;
+        }
+
+        bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.cleanup()`);
+      }
+
+      scope.hideCloseCheckbox = function() {
+        $timeout(function() {
+            const focusedElement = document.activeElement;
+
+            if (focusedElement.id == 'close-rally-button' ||
+                focusedElement.id == 'close-changed-rally-toggle' ||
+                focusedElement.id == 'close-changed-rally-box-label'
+            ) {
+              return;
+            }
+
+            scope.showCloseCheckbox = false;
+            scope.closeIgnoreUnsavedRallyChanges = false;
+        }, 200); // Slight delay to allow blur event processing
+    };
 
       scope.saveRally = function () {
         bngApi.engineLua('extensions.scripts_sopo__pacenotes_extension.deleteDisabledPacenotes()');

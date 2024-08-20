@@ -162,6 +162,23 @@
             </div>
             <button ng-click="loadRally()">Load</button>
             <button ng-click="saveAsRally()" ng-show="mode !== 'none'">Save As</button>
+            <button
+                id="close-rally-button"
+                ng-click="closeRally()" 
+                ng-disabled="rallyId == ''"
+                ng-focus="showCloseCheckbox = true"
+                ng-blur="hideCloseCheckbox()">
+                    Close
+            </button>
+
+            <input
+                type="checkbox"
+                id="close-changed-rally-toggle"
+                ng-show="showCloseCheckbox"
+                ng-focus="showCloseCheckbox = true"
+                ng-blur="hideCloseCheckbox()"
+                ng-model="closeIgnoreUnsavedRallyChanges"/>
+            <label id="close-changed-rally-box-label" ng-show="showCloseCheckbox" for="close-changed-rally-box">Ignore unsaved changes</label>
 
             <details>
                 <summary>Delete</summary>

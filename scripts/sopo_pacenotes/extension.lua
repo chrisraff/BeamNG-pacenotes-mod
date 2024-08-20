@@ -717,6 +717,7 @@ M.loadRally = loadRally
 M.newRally = newRally
 M.copyRally = copyRally
 M.deleteRally = deleteRally
+M.cleanup = cleanup
 M.onExtensionLoaded = onExtensionLoaded
 M.onAnyMissionChanged = onAnyMissionChanged
 M.onUiChangedState = onUiChangedState
