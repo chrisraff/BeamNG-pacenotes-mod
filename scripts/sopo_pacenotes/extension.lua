@@ -132,6 +132,8 @@ local function resetRecce()
     M.checkpoints_array = {}
     M.pacenotes_data = {}
     M.recordingDistance = 0
+    M.savingRecce = false
+
     M.serverResetCount()
 
     M.guiSendPacenoteData()
@@ -653,6 +655,12 @@ local function handleStopRecording()
 
     M.guiSendPacenoteData()
     -- M.guiSendSelectedPacenote(#M.pacenotes_data)
+
+    -- if in recce, set autosave to true
+    if M.mode == "recce" and not M.savingRecce then
+        M.savingRecce = true
+        guihooks.trigger('toastrMsg', {type = "info", title = "Recording Recce:", msg = "The Rally will auto save.", config = {timeOut = 5000}})
+    end
 
     if M.savingRecce then
         M.savePacenoteData()
