@@ -162,6 +162,7 @@
             </div>
             <button ng-click="loadRally()">Load</button>
             <button ng-click="saveAsRally()" ng-show="mode !== 'none'">Save As</button>
+            <button ng-click="newRally()" ng-disabled="SharedDataService.newRallyId == '' || SharedDataService.newRallyId == rallyId">New</button>
             <button
                 id="close-rally-button"
                 ng-click="closeRally()" 

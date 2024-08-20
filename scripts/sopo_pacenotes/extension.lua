@@ -137,13 +137,14 @@ local function resetRecce()
     M.serverResetCount()
 
     M.guiSendPacenoteData()
+    M.guiSendMissionData()
 end
 
 local function loadOrNewRally()
     local result = M.loadRally(M.rallyId)
 
     if not result then
-        M.newRally()
+        M.newRally(M.rallyId)
     end
 end
 
@@ -174,7 +175,8 @@ local function loadRally(rallyId)
     return true
 end
 
-local function newRally()
+local function newRally(rallyId)
+    M.rallyId = rallyId;
     M.mode = "recce"
 
     resetRecce()

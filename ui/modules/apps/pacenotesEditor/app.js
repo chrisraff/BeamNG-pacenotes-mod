@@ -81,6 +81,22 @@ angular.module('beamng.apps')
         bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.copyRally('${SharedDataService.newRallyId}')`);
       }
 
+      scope.newRally = function() {
+        // first, check if there's an existing file at 'art/sounds/' .. getCurrentLevelIdentifier() .. '/' .. newRallyId .. '/pacenotes.json' using the lua file system
+        bngApi.engineLua(`FS:fileExists('art/sounds/' .. getCurrentLevelIdentifier() .. '/' .. '${SharedDataService.newRallyId}' .. '/pacenotes.json')`, (fileExists) => {
+          if (fileExists)
+          {
+            // file exists, tell the user and don't make new project
+            bngApi.engineLua(`guihooks.trigger('toastrMsg', {type = "error", title = "Rally Already Exists", msg = "A new project was not created.", config = {timeOut = 7000}})`);
+          }
+          else
+          {
+            // make new project
+            bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.newRally('${SharedDataService.newRallyId}')`);
+          }
+        });
+      }
+
       scope.closeRally = function() {
         if (scope.isRallyChanged && !scope.closeIgnoreUnsavedRallyChanges) {
           bngApi.engineLua(`guihooks.trigger('toastrMsg', {type = "error", title = "Unsaved Changes", msg = "Closing this rally will cause loss of unsaved work.", config = {timeOut = 7000}})`);
