@@ -1,11 +1,18 @@
-angular.module('beamng.apps')
-.controller('DropdownController', ['$scope', function(scope) {
+angular.module('pacenotesEditor', [])
+.factory('SharedDataService', function() {
+  return {
+    rallyPaths: [],
+    newRallyId: ''
+  };
+})
+.controller('DropdownController', ['$scope', 'SharedDataService', function(scope, SharedDataService) {
   scope.filteredOptions = [];
+  scope.SharedDataService = SharedDataService;
 
   scope.filterOptions = function() {
-    if (scope.newRallyId !== undefined) {
-      scope.filteredOptions = scope.rallyPaths.filter(function(option) {
-        return option.toLowerCase().includes(scope.newRallyId.toLowerCase());
+    if (SharedDataService.newRallyId !== undefined) {
+      scope.filteredOptions = SharedDataService.rallyPaths.filter(function(option) {
+        return option.toLowerCase().includes(SharedDataService.newRallyId.toLowerCase());
       });
     } else {
       scope.filteredOptions = [];
@@ -13,7 +20,7 @@ angular.module('beamng.apps')
   };
 
   scope.selectOption = function(option) {
-    scope.newRallyId = option;
+    SharedDataService.newRallyId = option;
     scope.filteredOptions = [];
   };
 
@@ -28,8 +35,10 @@ angular.module('beamng.apps')
       });
     }, 200);
   };
-}])
-.directive('pacenotesEditor', ['$timeout', function ($timeout) {
+}]);
+
+angular.module('beamng.apps')
+.directive('pacenotesEditor', ['$timeout', 'SharedDataService', function ($timeout, SharedDataService) {
   return {
     templateUrl: '/ui/modules/apps/pacenotesEditor/app.html',
     replace: true,
@@ -39,9 +48,9 @@ angular.module('beamng.apps')
       scope.pacenotes_data = {};
       scope.level = '';
       scope.rallyId = '';
-      scope.rallyPaths = [];
       scope.mode = 'none';
       scope.isMicServerConnected = false;
+      scope.SharedDataService = SharedDataService;
 
       scope.followNote = true;
 
@@ -64,11 +73,11 @@ angular.module('beamng.apps')
       }
 
       scope.loadRally = function () {
-        bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.loadRally('${scope.newRallyId}')`);
+        bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.loadRally('${SharedDataService.newRallyId}')`);
       }
 
       scope.saveAsRally = function () {
-        bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.copyRally('${scope.newRallyId}')`);
+        bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.copyRally('${SharedDataService.newRallyId}')`);
       }
 
       scope.saveRally = function () {
@@ -190,7 +199,7 @@ angular.module('beamng.apps')
       scope.$on('MissionDataUpdate', function(event, args) {
         scope.level = args.level;
         scope.rallyId = args.rallyId;
-        scope.rallyPaths = args.rallyPaths;
+        SharedDataService.rallyPaths = args.rallyPaths;
         scope.mode = args.mode;
 
         document.querySelector('#playback-lookahead').value = args.playback_lookahead;
