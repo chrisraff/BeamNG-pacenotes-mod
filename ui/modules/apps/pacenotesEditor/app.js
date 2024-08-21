@@ -50,6 +50,7 @@ angular.module('beamng.apps')
       scope.rallyId = '';
       scope.mode = 'none';
       scope.isMicServerConnected = false;
+      scope.playbackVolume = 10;
       scope.closeIgnoreUnsavedRallyChanges = false;
       scope.SharedDataService = SharedDataService;
 
@@ -163,6 +164,12 @@ angular.module('beamng.apps')
       scope.$watch('speedMultiplier', function(newVal, oldVal) {
         if (newVal !== oldVal) {
           bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.settings.pacenote_playback.speed_multiplier = ${newVal}`);
+        }
+      });
+
+      scope.$watch('playbackVolume', function(newVal, oldVal) {
+        if (newVal !== oldVal) {
+          bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.settings.sound_data.volume = ${newVal}`);
         }
       });
 

@@ -26,6 +26,7 @@ M.settings = {
 M.guiConfig = {
     panelOpen = true,
     isRallyChanged = false,
+    playbackVolume = 10
 }
 
 M.checkpoints_array = nil
@@ -335,6 +336,8 @@ local function onUiChangedState(curUIState, prevUIState)
 
     -- save the settings
     jsonWriteFile('settings/sopo_pacenotes/settings.json', M.settings)
+
+    M.guiSendGuiData()
 end
 
 -- update functions
@@ -689,6 +692,7 @@ local function guiSendMissionData()
 end
 
 local function guiSendGuiData()
+    M.guiConfig.playbackVolume = M.settings.sound_data.volume
     guihooks.trigger('GuiDataUpdate', M.guiConfig)
 end
 
