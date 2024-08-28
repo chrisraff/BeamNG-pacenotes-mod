@@ -45,6 +45,7 @@ angular.module('beamng.apps')
     restrict: 'EA',
     link: function (scope, element, attrs) {
 
+      scope.panelOpen = true;
       scope.pacenotes_data = {};
       scope.level = '';
       scope.rallyId = '';
@@ -155,6 +156,13 @@ angular.module('beamng.apps')
         distances[closestIndex].scrollIntoViewIfNeeded();
       }
 
+      // Watched variables
+      scope.$watch('panelOpen', function(newVal, oldVal) {
+        if (newVal !== oldVal) {
+          bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.guiConfig.panelOpen = ${newVal}`);
+        }
+      })
+
       scope.$watch('playbackLookahead', function(newVal, oldVal) {
         if (newVal !== oldVal) {
           bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.settings.pacenote_playback.lookahead_distance_base = ${newVal}`);
@@ -259,8 +267,10 @@ angular.module('beamng.apps')
       });
 
       scope.$on('GuiDataUpdate', function(event, args) {
-        document.querySelector('.pacenotes-editor #main-panel').open = args.panelOpen;
+        watchEnabled = false;
+        scope.panelOpen = args.panelOpen;
         scope.isRallyChanged = args.isRallyChanged;
+        watchEnabled = true;
       });
 
       scope.$on('MicDataUpdate', function(event, args) {
@@ -285,12 +295,12 @@ angular.module('beamng.apps')
         document.querySelector('#pacenotes-list tbody').children[args.index].scrollIntoViewIfNeeded();
       });
 
-      scope.$on('$destroy', function() {
-        bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.guiConfig.panelOpen = ${document.querySelector('#main-panel').open};`);
-      });
-
       element.ready(function () {
         bngApi.engineLua('extensions.scripts_sopo__pacenotes_extension.guiInit()');
+
+        document.querySelector('#main-panel').addEventListener('toggle', (event) => {
+          scope.panelOpen = event.target.hasAttribute('open');
+        });
       });
     }
   };
