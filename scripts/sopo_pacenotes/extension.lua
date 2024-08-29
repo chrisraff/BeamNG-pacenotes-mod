@@ -659,12 +659,24 @@ local function handleStopRecording()
     end
 
     M.guiSendPacenoteData()
-    -- M.guiSendSelectedPacenote(#M.pacenotes_data)
+
+    -- Find the index of the recently recorded pacenote and select it
+    local recentNoteIndex = #M.pacenotes_data
+    for i, note in ipairs(M.pacenotes_data) do
+        if note.wave_name == newNote.wave_name and note.d == newNote.d then
+            recentNoteIndex = i
+            break
+        end
+    end
+    M.guiSendSelectedPacenote(recentNoteIndex)
 
     -- if in recce, set autosave to true
     if M.mode == "recce" and not M.savingRecce then
         M.savingRecce = true
         guihooks.trigger('toastrMsg', {type = "info", title = "Recording Recce:", msg = "The Rally will auto save.", config = {timeOut = 5000}})
+    elseif M.mode == "rally" then
+        M.guiConfig.isRallyChanged = true
+        M.guiSendGuiData()
     end
 
     if M.savingRecce then

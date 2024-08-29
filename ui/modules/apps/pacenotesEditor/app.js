@@ -213,12 +213,14 @@ angular.module('beamng.apps')
         }
       }, true); // deep watch: true
 
-      scope.selectRow = function (index) {
+      scope.selectRow = function (index, playSound = true) {
         if (scope.selectedRowIndex === index) {
           return;
         }
         scope.selectedRowIndex = index;
-        bngApi.engineLua(`Engine.Audio.playOnce('AudioGui', 'art/sounds/' .. getCurrentLevelIdentifier() .. '/' .. extensions.scripts_sopo__pacenotes_extension.rallyId .. '/pacenotes/${scope.pacenotes_data[index].wave_name}', extensions.scripts_sopo__pacenotes_extension.settings.sound_data)`);
+
+        if (playSound && index !== null && scope.pacenotes_data.length > index)
+          bngApi.engineLua(`Engine.Audio.playOnce('AudioGui', 'art/sounds/' .. getCurrentLevelIdentifier() .. '/' .. extensions.scripts_sopo__pacenotes_extension.rallyId .. '/pacenotes/${scope.pacenotes_data[index].wave_name}', extensions.scripts_sopo__pacenotes_extension.settings.sound_data)`);
       }
 
       scope.deleteContinueDistance = function () {
@@ -284,6 +286,8 @@ angular.module('beamng.apps')
       scope.$on('PacenoteDataUpdate', function(event, args) {
         watchEnabled = false;
         scope.pacenotes_data = args.pacenotes_data;
+        if (scope.selectedRowIndex == scope.pacenotes_data.length - 1)
+          scope.selectRow(scope.selectedRowIndex, false);
         watchEnabled = true;
       });
 
