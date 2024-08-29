@@ -528,6 +528,7 @@ local function savePacenoteData()
         M.guiSendGuiData()
     else
         log('E', M.logTag, 'failed to save pacenote data')
+        guihooks.trigger('toastrMsg', {type = "error", title = "Failed to Save Pacenotes", msg = "", config = {timeOut = 7000}})
     end
 end
 

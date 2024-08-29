@@ -76,7 +76,8 @@ angular.module('beamng.apps')
       }
 
       scope.loadRally = function () {
-        bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.loadRally('${SharedDataService.newRallyId}')`);
+        bngApi.engineLua(`local result = extensions.scripts_sopo__pacenotes_extension.loadRally('${SharedDataService.newRallyId}');
+                          guihooks.trigger('toastrMsg', {type = "error", title = "Rally Already Exists", msg = "A new project was not created.", config = {timeOut = 7000}})`);
       }
 
       scope.saveAsRally = function () {
