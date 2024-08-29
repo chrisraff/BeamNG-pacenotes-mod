@@ -48,7 +48,7 @@ def record_audio():
 
     audio_buffer = []
 
-    while recording:
+    while recording or len(audio_buffer) == 0:
         # Record audio data
         audio_data = stream.read(1024)
         audio_buffer.append(audio_data)
