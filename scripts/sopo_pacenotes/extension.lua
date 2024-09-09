@@ -633,6 +633,8 @@ local function handleStartRecording()
 
     if M.micServer == nil then
         log('I', M.logTag, 'Didn\'t start recording: not connected to server')
+        Engine.Audio.playOnce('AudioGui', 'event:>UI>Main>Back', {volume=5})
+        guihooks.trigger('toastrMsg', {type = "warning", title = "No Mic Connected", msg = "You must use the Pacenotes GUI to connect to the mic server.", config = {timeOut = 7000}})
         return
     end
 
