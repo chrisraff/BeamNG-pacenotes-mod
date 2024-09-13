@@ -129,8 +129,8 @@ local function resetRally()
     clearQueue()
 end
 
-local function resetRecce()
-    log('I', M.logTag, 'resetRecce called')
+local function initRecce()
+    log('I', M.logTag, 'initRecce called')
     M.checkpoints_array = {}
     M.pacenotes_data = {}
     M.recordingDistance = 0
@@ -184,7 +184,7 @@ local function newRally(rallyId)
     M.rallyId = rallyId;
     M.mode = "recce"
 
-    resetRecce()
+    initRecce()
 end
 
 local function copyRally(newId)
@@ -240,7 +240,11 @@ local function deleteRally()
 end
 
 local function cleanup()
-    log('I', M.logTag, 'closing rally')
+    log('I', M.logTag, 'rally / recce: cleanup called')
+
+    if M.savingRecce then
+        M.savePacenoteData()
+    end
 
     if M.guiConfig.isRallyChanged then
         jsonWriteFile('art/sounds/' .. M.levelId .. '/' .. M.rallyId .. '/pacenotes_autosave.json', M.pacenotes_data)
@@ -631,6 +635,15 @@ end
 local function handleStartRecording()
     log('I', M.logTag, 'start rec')
 
+    -- if in recce, set autosave to true
+    if M.mode == "recce" and not M.savingRecce then
+        M.savingRecce = true
+        guihooks.trigger('toastrMsg', {type = "info", title = "Recording Recce:", msg = "The Rally will auto save.", config = {timeOut = 5000}})
+    elseif M.mode == "rally" then
+        M.guiConfig.isRallyChanged = true
+        M.guiSendGuiData()
+    end
+
     if M.micServer == nil then
         log('I', M.logTag, 'Didn\'t start recording: not connected to server')
         Engine.Audio.playOnce('AudioGui', 'event:>UI>Main>Back', {volume=5})
@@ -657,6 +670,10 @@ local function handleStopRecording()
 
     if M.micServer == nil then
         log('I', M.logTag, 'Didn\'t stop recording: not connected to server')
+        return
+    end
+
+    if not (M.mode == "rally" or M.mode == "recce") then
         return
     end
 
@@ -687,15 +704,6 @@ local function handleStopRecording()
         end
     end
     M.guiSendSelectedPacenote(recentNoteIndex)
-
-    -- if in recce, set autosave to true
-    if M.mode == "recce" and not M.savingRecce then
-        M.savingRecce = true
-        guihooks.trigger('toastrMsg', {type = "info", title = "Recording Recce:", msg = "The Rally will auto save.", config = {timeOut = 5000}})
-    elseif M.mode == "rally" then
-        M.guiConfig.isRallyChanged = true
-        M.guiSendGuiData()
-    end
 
     if M.savingRecce then
         M.savePacenoteData()
