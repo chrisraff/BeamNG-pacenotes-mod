@@ -320,6 +320,18 @@ local function setup(scenarioOrMission)
     M.guiSendMissionData()
 end
 
+local function switchRallyFromRecce()
+    M.savePacenoteData();
+
+    M.mode = 'rally';
+
+    M.recordingDistance = 0
+    M.savingRecce = false
+
+    M.guiSendPacenoteData()
+    M.guiSendMissionData()
+end
+
 -- mission / scenario callbacks
 
 local function onAnyMissionChanged(started, mission, userSettings)
@@ -769,6 +781,7 @@ M.copyRally = copyRally
 M.deleteRally = deleteRally
 M.cleanup = cleanup
 M.onExtensionLoaded = onExtensionLoaded
+M.switchRallyFromRecce = switchRallyFromRecce
 M.onAnyMissionChanged = onAnyMissionChanged
 M.onUiChangedState = onUiChangedState
 M.onClientPostStartMission = onClientPostStartMission

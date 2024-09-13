@@ -275,6 +275,10 @@ angular.module('beamng.apps')
         bngApi.engineLua('extensions.scripts_sopo__pacenotes_extension.savePacenoteData()');
       }
 
+      scope.recceFinalize = function () {
+        bngApi.engineLua('extensions.scripts_sopo__pacenotes_extension.switchRallyFromRecce()');
+      }
+
       // gui hooks
 
       scope.$on('MissionDataUpdate', function(event, args) {
