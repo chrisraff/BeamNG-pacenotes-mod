@@ -27,6 +27,19 @@
             margin-left: -10px;
         }
 
+        .pacenotes-editor .recording-lamp {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-left: 10px;
+            background-color: #333; /* Default color */
+        }
+
+        .pacenotes-editor .recording-lamp.is-recording {
+            background-color: red;
+        }
+
         /* TODO switch to flexboxes so table height can be smarter */
         #pacenotes-list {
             height: 300px;
@@ -210,6 +223,7 @@
         <details id="mic-server-panel" open>
             <summary>
                 Mic Server: <span id="mic-state">{{isMicServerConnected ? 'Connected' : 'Disconnected'}}</span>
+                <span class="recording-lamp"></span>
             </summary>
             <button id="connect-disconnect-mic-server" ng-click="toggleMicServerConnection()" ng-model-options="{ debounce: 100 }">
                 {{isMicServerConnected ? 'Disconnect' : 'Connect'}}

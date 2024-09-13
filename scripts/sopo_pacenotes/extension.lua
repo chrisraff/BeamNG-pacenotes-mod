@@ -52,6 +52,7 @@ M.recordingIndex = 0
 
 M.recordingDistance = 0
 
+M.isRecording = false
 M.recordAtNote = false
 
 M.savingRecce = false
@@ -659,6 +660,9 @@ local function handleStartRecording()
         if not M.recordAtNote then
             M.recordingDistance = M.last_distance
         end
+
+        M.isRecording = true
+        M.guiSendMicData()
     else
         log('I', M.logTag, 'Didn\'t start recording: not in rally or recce mode')
     end
@@ -677,6 +681,9 @@ local function handleStopRecording()
     end
 
     M.micServer:send('record_stop')
+
+    M.isRecording = false
+    M.guiSendMicData()
 
     local newNote = {
         d = M.recordingDistance,
@@ -735,7 +742,7 @@ end
 
 local function guiSendMicData()
     log('I', M.logTag, 'sending mic data')
-    guihooks.trigger('MicDataUpdate', {connected=M.micServer ~= nil})
+    guihooks.trigger('MicDataUpdate', {connected=M.micServer ~= nil, isRecording = M.isRecording})
 end
 
 local function guiSendRallyData()

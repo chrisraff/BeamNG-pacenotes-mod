@@ -51,6 +51,7 @@ angular.module('beamng.apps')
       scope.rallyId = '';
       scope.mode = 'none';
       scope.isMicServerConnected = false;
+      scope.isRecording = false;
       scope.playbackVolume = 10;
       scope.closeIgnoreUnsavedRallyChanges = false;
       scope.SharedDataService = SharedDataService;
@@ -298,6 +299,9 @@ angular.module('beamng.apps')
 
       scope.$on('MicDataUpdate', function(event, args) {
         scope.isMicServerConnected = args.connected;
+        scope.isRecording = args.isRecording;
+        const recordingLamp = document.querySelector('.recording-lamp');
+        recordingLamp.classList.toggle('is-recording', args.isRecording);
       });
 
       scope.$on('RallyDataUpdate', function(event, args) {
