@@ -46,7 +46,7 @@ angular.module('beamng.apps')
     link: function (scope, element, attrs) {
 
       scope.panelOpen = true;
-      scope.pacenotes_data = {};
+      scope.pacenotes_data = [];
       scope.level = '';
       scope.rallyId = '';
       scope.mode = 'none';
@@ -56,6 +56,7 @@ angular.module('beamng.apps')
       scope.SharedDataService = SharedDataService;
 
       scope.followNote = true;
+      scope.recordAtNote = false;
 
       // editor table:
       scope.selectedRowIndex = null;
@@ -77,7 +78,9 @@ angular.module('beamng.apps')
 
       scope.loadRally = function () {
         bngApi.engineLua(`local result = extensions.scripts_sopo__pacenotes_extension.loadRally('${SharedDataService.newRallyId}');
-                          guihooks.trigger('toastrMsg', {type = "error", title = "Rally Already Exists", msg = "A new project was not created.", config = {timeOut = 7000}})`);
+                          if not result then
+                            guihooks.trigger('toastrMsg', {type = "error", title = "Couldn't Load Rally", msg = "Check that the file exists, or record a new one.", config = {timeOut = 7000}});
+                          end`);
       }
 
       scope.saveAsRally = function () {
@@ -179,6 +182,23 @@ angular.module('beamng.apps')
       scope.$watch('playbackVolume', function(newVal, oldVal) {
         if (newVal !== oldVal) {
           bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.settings.sound_data.volume = ${newVal}`);
+        }
+      });
+
+      scope.$watch('recordAtNote', function(newVal, oldVal) {
+        if (newVal !== oldVal) {
+          bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.recordAtNote = ${newVal}`);
+
+          if (newVal) {
+            const distance = scope.pacenotes_data[scope.selectedRowIndex].d;
+            bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.recordingDistance = ${distance}`);
+          }
+        }
+      });
+
+      scope.$watch('pacenotes_data[selectedRowIndex].d', function (newVal, oldVal) {
+        if (newVal !== oldVal && scope.recordAtNote) {
+          bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.recordingDistance = ${newVal}`);
         }
       });
 

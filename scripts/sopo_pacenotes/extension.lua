@@ -52,6 +52,8 @@ M.recordingIndex = 0
 
 M.recordingDistance = 0
 
+M.recordAtNote = false
+
 M.savingRecce = false
 
 M.logTag = "sopo_pacenotes.extension"
@@ -654,10 +656,7 @@ local function handleStartRecording()
     if M.mode == "rally" or M.mode == "recce" then
         M.micServer:send('record_start')
 
-        if M.mode == "recce" then
-            local lastCheckpoint = M.checkpoints_array[#M.checkpoints_array]
-            M.recordingDistance = lastCheckpoint[4]
-        elseif M.mode == "rally" then
+        if not M.recordAtNote then
             M.recordingDistance = M.last_distance
         end
     else
