@@ -48,6 +48,8 @@ M.audioQueueClearing = false
 M.checkpointResolution = 2 -- meters between stage checkpoints
 M.checkpointMaxEcc = 10 -- prevent adding a checkpoint in a restart
 
+M.isRecordingNewPositions = false
+
 M.recordingIndex = 0
 
 M.recordingDistance = 0
@@ -183,6 +185,7 @@ local function initRecce()
     M.pacenotes_data = {}
     M.recordingDistance = 0
     M.savingRecce = false
+    M.isRecordingNewPositions = true
 
     M.serverResetCount()
 
@@ -310,6 +313,8 @@ local function cleanup()
     M.scenarioHandle = nil
     M.pacenotes_data = nil
 
+    M.isRecordingNewPositions = false
+
     clearQueue()
 
     M.serverCloseMission()
@@ -429,6 +434,22 @@ end
 
 -- update functions
 
+local function updateDistance(position)
+    local shortest_distance = math.huge
+    -- check the surrounding checkpoints
+    for i = math.max(M.checkpoint_index - 2, 1), math.min(M.checkpoint_index + 2, #M.checkpoints_array) do
+        local squaredDistance = computeDistSquared(M.checkpoints_array[i].x, M.checkpoints_array[i].y, M.checkpoints_array[i].z, position.x, position.y, position.z)
+
+        if squaredDistance < shortest_distance then
+            M.checkpoint_index = i
+            shortest_distance = squaredDistance
+        end
+    end
+
+    M.last_distance = M.checkpoints_array[M.checkpoint_index].d
+
+end
+
 local function updateRally(dt)
     if M.mode ~= "rally" then return end
 
@@ -445,24 +466,15 @@ local function updateRally(dt)
     if my_veh == nil then return end
 
     local position = my_veh:getPosition()
-    local shortest_distance = math.huge
+    -- local shortest_distance = math.huge
 
     if computeDistSquared(position.x, position.y, position.z, M.last_position.x, M.last_position.y, M.last_position.z) > M.settings.reset_threshold^2 then
         resetRally()
     else
-        -- check the surrounding
-        for i = math.max(M.checkpoint_index - 2, 1), math.min(M.checkpoint_index + 2, #M.checkpoints_array) do
-            local squaredDistance = computeDistSquared(M.checkpoints_array[i].x, M.checkpoints_array[i].y, M.checkpoints_array[i].z, position.x, position.y, position.z)
-
-            if squaredDistance < shortest_distance then
-                M.checkpoint_index = i
-                shortest_distance = squaredDistance
-            end
-        end
+        updateDistance(position)
     end
 
     M.last_position = position
-    M.last_distance = M.checkpoints_array[M.checkpoint_index].d
 
     local vel = my_veh:getVelocity()
     local speedAlongTrack = 0
@@ -533,57 +545,88 @@ local function updateRecce(dt)
     -- if we haven't recorded any checkpoints yet, set the distance so we will trigger a recording
     local distance2FromLast = math.huge
 
+    local dotProduct = 1
+
     -- see if we need to record a new checkpoint
     if #M.checkpoints_array > 0 then
         local lastCheckpoint = M.checkpoints_array[#M.checkpoints_array]
         distance2FromLast = computeDistSquared(lastCheckpoint.x, lastCheckpoint.y, lastCheckpoint.z, position.x, position.y, position.z)
+
+        -- subtract out the direction vector
+        local lastCheckpointPos = vec3(lastCheckpoint.x, lastCheckpoint.y, lastCheckpoint.z)
+        local lastCheckpointDir = (lastCheckpointPos - position):normalized()
+
+        if #M.checkpoints_array > 1 then
+            dotProduct = lastCheckpointDir:dot(vec3(lastCheckpoint.dx, lastCheckpoint.dy, lastCheckpoint.dz))
+        end
     end
 
-    if distance2FromLast >= M.checkpointResolution^2 and (distance2FromLast < M.checkpointMaxEcc^2 or distance2FromLast == math.huge) and (M.uiState == "play" or M.uiState == "none") then
-        -- record the checkpoint
-        local newD = 0
-        local dx, dy, dz = 0, 0, 0
+    local farEnough = distance2FromLast >= M.checkpointResolution^2
+    local closeEnough = distance2FromLast < M.checkpointMaxEcc^2 or distance2FromLast == math.huge
+    local uiPlaying = (M.uiState == "play" or M.uiState == "none")
+    local forwardEnough = dotProduct > -0.8
 
-        if #M.checkpoints_array > 0 then
-            local lastCheckpoint = M.checkpoints_array[#M.checkpoints_array]
-            newD = lastCheckpoint.d + math.sqrt(distance2FromLast)
+    if M.isRecordingNewPositions then
+        if farEnough and closeEnough and uiPlaying and forwardEnough then
+            -- record the checkpoint
+            local newD = 0
+            local dx, dy, dz = 0, 0, 0
 
-            -- calculate the new direction vector for previous checkpoint
-            local dirVector = vec3(
-                lastCheckpoint.x - position.x,
-                lastCheckpoint.y - position.y,
-                lastCheckpoint.z - position.z
-            ):normalized()
+            if #M.checkpoints_array > 0 then
+                local lastCheckpoint = M.checkpoints_array[#M.checkpoints_array]
+                newD = lastCheckpoint.d + math.sqrt(distance2FromLast)
 
-            -- Add the direction vector to the current checkpoint
-            lastCheckpoint.dx = roundNear(dirVector.x, 0.001)
-            lastCheckpoint.dy = roundNear(dirVector.y, 0.001)
-            lastCheckpoint.dz = roundNear(dirVector.z, 0.001)
+                -- calculate the new direction vector for previous checkpoint
+                local dirVector = vec3(
+                    lastCheckpoint.x - position.x,
+                    lastCheckpoint.y - position.y,
+                    lastCheckpoint.z - position.z
+                ):normalized()
 
-            dx = lastCheckpoint.dx
-            dy = lastCheckpoint.dy
-            dz = lastCheckpoint.dz
-        else
-            -- if this is the first checkpoint, set direction to vehicle's forward
-            local forward = my_veh:getForwardVector()
-            dx = roundNear(forward.x, 0.0001)
-            dy = roundNear(forward.y, 0.0001)
-            dz = roundNear(forward.z, 0.0001)
+                -- Add the direction vector to the current checkpoint
+                lastCheckpoint.dx = roundNear(dirVector.x, 0.001)
+                lastCheckpoint.dy = roundNear(dirVector.y, 0.001)
+                lastCheckpoint.dz = roundNear(dirVector.z, 0.001)
+
+                dx = lastCheckpoint.dx
+                dy = lastCheckpoint.dy
+                dz = lastCheckpoint.dz
+            else
+                -- if this is the first checkpoint, set direction to vehicle's forward
+                local forward = my_veh:getForwardVector()
+                dx = roundNear(forward.x, 0.0001)
+                dy = roundNear(forward.y, 0.0001)
+                dz = roundNear(forward.z, 0.0001)
+            end
+
+            log('I', M.logTag, '>> recording checkpoint at ' .. position.x .. ', ' .. position.y .. ', ' .. position.z .. ' with d ' .. newD)
+
+            local newPoint = {
+                x=roundNear(position.x, 0.0001),
+                y=roundNear(position.y, 0.0001),
+                z=roundNear(position.z, 0.0001),
+                dx=dx,
+                dy=dy,
+                dz=dz,
+                d=roundNear(newD, 0.001)}
+            table.insert(M.checkpoints_array, newPoint) -- Append new_point to checkpoints_array
+
+            M.last_distance = newD
+            M.checkpoint_index = #M.checkpoints_array
+        elseif not forwardEnough and not closeEnough then
+            M.isRecordingNewPositions = false
+
+            log('I', M.logTag, '>> recording stopped')
         end
+    else
+        -- if not recording new positions
+        updateDistance(position)
 
-        log('I', M.logTag, '>> recording checkpoint at ' .. position.x .. ', ' .. position.y .. ', ' .. position.z .. ' with d ' .. newD)
-
-        local newPoint = {
-            x=roundNear(position.x, 0.0001),
-            y=roundNear(position.y, 0.0001),
-            z=roundNear(position.z, 0.0001),
-            dx=dx,
-            dy=dy,
-            dz=dz,
-            d=roundNear(newD, 0.001)}
-        table.insert(M.checkpoints_array, newPoint) -- Append new_point to checkpoints_array
-
-        M.last_distance = newD
+        --check if we need to start recording
+        if not farEnough and closeEnough and uiPlaying then
+            M.isRecordingNewPositions = true
+            log('I', M.logTag, '>> recording started')
+        end
     end
 
     M.guiSendRallyData()
