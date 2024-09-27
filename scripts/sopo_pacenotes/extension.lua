@@ -61,6 +61,51 @@ M.logTag = "sopo_pacenotes.extension"
 
 local micServer = nil
 
+local function adaptCheckpointsArray(checkpoints)
+    for i = 1, #checkpoints do
+        -- Extract positional array values [x, y, z, d]
+        local x, y, z, d = checkpoints[i][1], checkpoints[i][2], checkpoints[i][3], checkpoints[i][4]
+
+        -- Create a labeled table
+        checkpoints[i] = {
+            x = roundNear(x, 0.001),
+            y = roundNear(y, 0.001),
+            z = roundNear(z, 0.001),
+            d = roundNear(d, 0.001)
+        }
+
+        -- If not the last checkpoint, compute the direction vector
+        if i < #checkpoints then
+            local nextCheckpoint = checkpoints[i + 1]
+            local dirVector = vec3(
+                nextCheckpoint[1] - checkpoints[i].x,
+                nextCheckpoint[2] - checkpoints[i].y,
+                nextCheckpoint[3] - checkpoints[i].z
+            ):normalized()
+
+            -- Add the direction vector to the current checkpoint
+            checkpoints[i].dx = roundNear(dirVector.x, 0.001)
+            checkpoints[i].dy = roundNear(dirVector.y, 0.001)
+            checkpoints[i].dz = roundNear(dirVector.z, 0.001)
+        else
+            -- For the last checkpoint, copy the previous direction
+            checkpoints[i].dx = checkpoints[i - 1].dx
+            checkpoints[i].dy = checkpoints[i - 1].dy
+            checkpoints[i].dz = checkpoints[i - 1].dz
+        end
+    end
+
+    return checkpoints
+end
+
+local function adaptPacenotesData(pacenotes)
+    for i = 1, #pacenotes do
+        pacenotes[i].d = roundNear(pacenotes[i].d, 0.001)
+    end
+
+    return pacenotes
+end
+
 local function onExtensionLoaded()
     log('I', M.logTag, '>>>>>>>>>>>>>>>>>>>>> onExtensionLoaded from sopo ext')
 
@@ -114,7 +159,7 @@ local function resetRally()
     local distance = math.huge
     local position = my_veh:getPosition()
     for i, checkpoint in ipairs(M.checkpoints_array) do
-        local squaredDistance = computeDistSquared(checkpoint[1], checkpoint[2], checkpoint[3], position.x, position.y, position.z)
+        local squaredDistance = computeDistSquared(checkpoint.x, checkpoint.y, checkpoint.z, position.x, position.y, position.z)
 
         if squaredDistance < distance then
             M.checkpoint_index = i
@@ -123,7 +168,7 @@ local function resetRally()
     end
 
     -- setup distance tracking from checkpoints
-    M.last_distance = M.checkpoints_array[M.checkpoint_index][4]
+    M.last_distance = M.checkpoints_array[M.checkpoint_index].d
     M.distance_of_last_queued_note = M.last_distance
 
     M.last_position = position
@@ -161,6 +206,14 @@ local function loadRally(rallyId)
     if not file then
         log('E', M.logTag, 'failed to load pacenote data')
         return false
+    end
+
+    -- temporary adaptation step
+    if file[1][1].x == nil then
+        print(' >>>>>>>>> adapting checkpoints array')
+        file[1] = adaptCheckpointsArray(file[1])
+
+        file[2] = adaptPacenotesData(file[2])
     end
 
     M.rallyId = rallyId
@@ -399,7 +452,7 @@ local function updateRally(dt)
     else
         -- check the surrounding
         for i = math.max(M.checkpoint_index - 2, 1), math.min(M.checkpoint_index + 2, #M.checkpoints_array) do
-            local squaredDistance = computeDistSquared(M.checkpoints_array[i][1], M.checkpoints_array[i][2], M.checkpoints_array[i][3], position.x, position.y, position.z)
+            local squaredDistance = computeDistSquared(M.checkpoints_array[i].x, M.checkpoints_array[i].y, M.checkpoints_array[i].z, position.x, position.y, position.z)
 
             if squaredDistance < shortest_distance then
                 M.checkpoint_index = i
@@ -409,24 +462,20 @@ local function updateRally(dt)
     end
 
     M.last_position = position
-    M.last_distance = M.checkpoints_array[M.checkpoint_index][4]
+    M.last_distance = M.checkpoints_array[M.checkpoint_index].d
 
     local vel = my_veh:getVelocity()
     local speedAlongTrack = 0
 
     local checkpoint = M.checkpoints_array[M.checkpoint_index]
-    if (M.checkpoint_index + 1) <= #M.checkpoints_array then
-        local nextCheckpoint = M.checkpoints_array[M.checkpoint_index + 1]
-        local checkpointDirection = vec3(nextCheckpoint[1] - checkpoint[1], nextCheckpoint[2] - checkpoint[2], nextCheckpoint[3] - checkpoint[3]):normalized()
-        speedAlongTrack = vel:dot(checkpointDirection)
+    speedAlongTrack = vel:dot(vec3(checkpoint.dx, checkpoint.dy, checkpoint.dz))
 
-        -- if this speed is above 90, assume it is a reset and ignore it
-        if speedAlongTrack > 90 then
-            speedAlongTrack = 0
-        end
+    -- if this speed is above 90, assume it is a reset and ignore it
+    if speedAlongTrack > 90 then
+        speedAlongTrack = 90
     end
 
-    queueUpUntil(checkpoint[4] + M.settings.pacenote_playback.lookahead_distance_base + speedAlongTrack * M.settings.pacenote_playback.speed_multiplier)
+    queueUpUntil(checkpoint.d + M.settings.pacenote_playback.lookahead_distance_base + speedAlongTrack * M.settings.pacenote_playback.speed_multiplier)
 
     M.guiSendRallyData()
 end
@@ -487,20 +536,51 @@ local function updateRecce(dt)
     -- see if we need to record a new checkpoint
     if #M.checkpoints_array > 0 then
         local lastCheckpoint = M.checkpoints_array[#M.checkpoints_array]
-        distance2FromLast = computeDistSquared(lastCheckpoint[1], lastCheckpoint[2], lastCheckpoint[3], position.x, position.y, position.z)
+        distance2FromLast = computeDistSquared(lastCheckpoint.x, lastCheckpoint.y, lastCheckpoint.z, position.x, position.y, position.z)
     end
 
-    if distance2FromLast >= M.checkpointResolution^2 and (distance2FromLast < M.checkpointMaxEcc^2 or distance2FromLast == math.huge) and M.uiState == "play" then
+    if distance2FromLast >= M.checkpointResolution^2 and (distance2FromLast < M.checkpointMaxEcc^2 or distance2FromLast == math.huge) and (M.uiState == "play" or M.uiState == "none") then
         -- record the checkpoint
         local newD = 0
+        local dx, dy, dz = 0, 0, 0
+
         if #M.checkpoints_array > 0 then
             local lastCheckpoint = M.checkpoints_array[#M.checkpoints_array]
-            newD = lastCheckpoint[4] + math.sqrt(distance2FromLast)
+            newD = lastCheckpoint.d + math.sqrt(distance2FromLast)
+
+            -- calculate the new direction vector for previous checkpoint
+            local dirVector = vec3(
+                lastCheckpoint.x - position.x,
+                lastCheckpoint.y - position.y,
+                lastCheckpoint.z - position.z
+            ):normalized()
+
+            -- Add the direction vector to the current checkpoint
+            lastCheckpoint.dx = roundNear(dirVector.x, 0.001)
+            lastCheckpoint.dy = roundNear(dirVector.y, 0.001)
+            lastCheckpoint.dz = roundNear(dirVector.z, 0.001)
+
+            dx = lastCheckpoint.dx
+            dy = lastCheckpoint.dy
+            dz = lastCheckpoint.dz
+        else
+            -- if this is the first checkpoint, set direction to vehicle's forward
+            local forward = my_veh:getForwardVector()
+            dx = roundNear(forward.x, 0.0001)
+            dy = roundNear(forward.y, 0.0001)
+            dz = roundNear(forward.z, 0.0001)
         end
 
         log('I', M.logTag, '>> recording checkpoint at ' .. position.x .. ', ' .. position.y .. ', ' .. position.z .. ' with d ' .. newD)
 
-        local newPoint = {position.x, position.y, position.z, newD}
+        local newPoint = {
+            x=roundNear(position.x, 0.0001),
+            y=roundNear(position.y, 0.0001),
+            z=roundNear(position.z, 0.0001),
+            dx=dx,
+            dy=dy,
+            dz=dz,
+            d=roundNear(newD, 0.001)}
         table.insert(M.checkpoints_array, newPoint) -- Append new_point to checkpoints_array
 
         M.last_distance = newD
@@ -698,7 +778,7 @@ local function handleStopRecording()
     M.guiSendMicData()
 
     local newNote = {
-        d = M.recordingDistance,
+        d = roundNear(M.recordingDistance, 0.001),
         wave_name = 'pacenote_' .. M.recordingIndex .. '.wav'
     }
 
