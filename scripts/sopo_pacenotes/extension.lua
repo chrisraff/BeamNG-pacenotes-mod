@@ -738,6 +738,9 @@ local function connectToMicServer()
 
     M.guiSendMicData()
 
+    M.serverUpdateDataPath()
+    M.micServer:send('\n')
+
     if M.rallyId ~= nil then
         M.serverUpdateMission()
     end
@@ -757,12 +760,18 @@ local function disconnectFromMicServer()
     M.guiSendMicData()
 end
 
+local function serverUpdateDataPath()
+    if M.micServer ~= nil then
+        M.micServer:send('data_path ' .. FS:getFileRealPath('/art/sounds'))
+    end
+end
+
 local function serverUpdateMission()
     if M.micServer ~= nil then
         M.micServer:send('mission ' .. M.levelId .. '/' .. M.rallyId)
 
         -- in case we are recording more pacenotes, set the index
-        if M.mode == "rally" then
+        if M.mode == "rally" or M.mode == "recce" then
             -- avoid overwriting existing pacenotes
             local maxNumber = 0
             for _, pacenote in ipairs(M.pacenotes_data) do
@@ -945,6 +954,7 @@ M.savePacenoteData = savePacenoteData
 M.onScenarioChange = onScenarioChange
 M.connectToMicServer = connectToMicServer
 M.disconnectFromMicServer = disconnectFromMicServer
+M.serverUpdateDataPath = serverUpdateDataPath
 M.serverCloseMission = serverCloseMission
 M.serverUpdateMission = serverUpdateMission
 M.serverDeleteLastPacenote = serverDeleteLastPacenote

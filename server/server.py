@@ -6,7 +6,7 @@ import wave
 from pathlib import Path
 
 mission_path = None
-output_path = Path('C:/Users/raffc/AppData/Local/BeamNG.drive/0.32/art/sounds/')
+output_path = None
 pacenotes_path = Path('pacenotes')
 
 # Initialize PyAudio
@@ -133,6 +133,9 @@ while True:
 
                 elif parts[0] == 'mission_end':
                     mission_path = None
+
+                elif parts[0] == 'data_path':
+                    output_path = Path(parts[1])
 
                 elif parts[0] == 'delete_last_pacenote':
                     if mission_path is None:
