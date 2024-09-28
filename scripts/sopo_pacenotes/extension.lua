@@ -571,6 +571,13 @@ local function updateRecce(dt)
 
     local position = my_veh:getPosition()
 
+    if computeDistSquared(position.x, position.y, position.z, M.last_position.x, M.last_position.y, M.last_position.z) > M.settings.reset_threshold^2 then
+        log('I', M.logTag, 'resetting recce checkpoint index')
+        M.checkpoint_index = findClosestCheckpoint(position)
+    end
+
+    M.last_position = position
+
     -- if we haven't recorded any checkpoints yet, set the distance so we will trigger a recording
     local distance2FromLast = math.huge
 
@@ -607,9 +614,9 @@ local function updateRecce(dt)
 
                 -- calculate the new direction vector for previous checkpoint
                 local dirVector = vec3(
-                    lastCheckpoint.x - position.x,
-                    lastCheckpoint.y - position.y,
-                    lastCheckpoint.z - position.z
+                    position.x - lastCheckpoint.x,
+                    position.y - lastCheckpoint.y,
+                    position.z - lastCheckpoint.z
                 ):normalized()
 
                 -- Add the direction vector to the current checkpoint
@@ -651,10 +658,16 @@ local function updateRecce(dt)
         -- if not recording new positions
         updateDistance(position)
 
-        --check if we need to start recording
-        if not farEnough and closeEnough and uiPlaying then
-            M.isRecordingNewPositions = true
+        -- check if we need to start recording
+        if closeEnough and uiPlaying then
+            -- presume we are at the tip of the track:
+            -- delete points further than current pos and start recording
             log('I', M.logTag, '>> recording started')
+            M.isRecordingNewPositions = true
+            -- delete checkpoints after this index
+            for i = #M.checkpoints_array, M.checkpoint_index + 1, -1 do
+                table.remove(M.checkpoints_array, i)
+            end
         end
     end
 
