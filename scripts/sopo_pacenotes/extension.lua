@@ -16,7 +16,8 @@ M.settings = {
     sound_data = {
         volume = 10
     },
-    reset_threshold = 10,
+    reset_threshold = 10, -- if you move this much since last tick, reset
+    off_course_playback_reset_dist = 30, -- if you drive off course this much, reset playback
     pacenote_playback = {
         lookahead_distance_base = 60,
         speed_multiplier = 3
@@ -150,23 +151,38 @@ local function clearQueue()
     end
 end
 
-local function resetRally()
-    log('I', M.logTag, 'resetRally called')
+local function findClosestCheckpoint(position)
+    if not position then
+        local my_veh = be:getPlayerVehicle(0)
+        if my_veh == nil then return end
+        position = my_veh:getPosition()
+    end
 
-    -- find the closest checkpoint
-    local my_veh = be:getPlayerVehicle(0)
-    if my_veh == nil then return end
-
-    M.checkpoint_index = 0
+    local checkpoint_index = 0
     local distance = math.huge
-    local position = my_veh:getPosition()
     for i, checkpoint in ipairs(M.checkpoints_array) do
         local squaredDistance = computeDistSquared(checkpoint.x, checkpoint.y, checkpoint.z, position.x, position.y, position.z)
 
         if squaredDistance < distance then
-            M.checkpoint_index = i
+            checkpoint_index = i
             distance = squaredDistance
         end
+    end
+
+    return checkpoint_index
+end
+
+local function resetRally(checkpoint_index)
+    local my_veh = be:getPlayerVehicle(0)
+    if my_veh == nil then return end
+    local position = my_veh:getPosition()
+
+    log('I', M.logTag, 'resetRally called')
+
+    if checkpoint_index then
+        M.checkpoint_index = checkpoint_index
+    else
+        M.checkpoint_index = findClosestCheckpoint(position)
     end
 
     -- setup distance tracking from checkpoints
@@ -436,6 +452,7 @@ end
 
 local function updateDistance(position)
     local shortest_distance = math.huge
+
     -- check the surrounding checkpoints
     for i = math.max(M.checkpoint_index - 2, 1), math.min(M.checkpoint_index + 2, #M.checkpoints_array) do
         local squaredDistance = computeDistSquared(M.checkpoints_array[i].x, M.checkpoints_array[i].y, M.checkpoints_array[i].z, position.x, position.y, position.z)
@@ -447,6 +464,18 @@ local function updateDistance(position)
     end
 
     M.last_distance = M.checkpoints_array[M.checkpoint_index].d
+
+    -- if we are very far from the current checkpoint, find the closest one
+    local dist2 = computeDistSquared(position.x, position.y, position.z, M.checkpoints_array[M.checkpoint_index].x, M.checkpoints_array[M.checkpoint_index].y, M.checkpoints_array[M.checkpoint_index].z)
+    local thresh2 = M.settings.off_course_playback_reset_dist * M.settings.off_course_playback_reset_dist
+    if dist2 > thresh2 then
+        local newCheckpoint = findClosestCheckpoint(position)
+
+        -- if we're not near any nearby checkpoints, reset playback based on nearest checkpoint
+        if math.abs(newCheckpoint - M.checkpoint_index) > 2 then
+            resetRally(newCheckpoint)
+        end
+    end
 
 end
 
