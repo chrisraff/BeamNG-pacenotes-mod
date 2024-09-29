@@ -10,7 +10,7 @@ angular.module('pacenotesEditor', [])
   scope.SharedDataService = SharedDataService;
 
   scope.filterOptions = function() {
-    if (SharedDataService.newRallyId !== undefined) {
+    if (SharedDataService.newRallyId !== undefined && SharedDataService.rallyPaths !== undefined) {
       scope.filteredOptions = SharedDataService.rallyPaths.filter(function(option) {
         return option.toLowerCase().includes(SharedDataService.newRallyId.toLowerCase());
       });
@@ -208,6 +208,9 @@ angular.module('beamng.apps')
           // assume that only the current row is being edited
           let pacenote = newVal[scope.selectedRowIndex];
 
+          if (pacenote === undefined)
+            return;
+
           // only update the appropriate values
           bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.pacenotes_data[${scope.selectedRowIndex+1}].d = ${pacenote.d}`);
           if (pacenote.name == '' || pacenote.name === undefined)
@@ -315,8 +318,8 @@ angular.module('beamng.apps')
       scope.$on('PacenoteDataUpdate', function(event, args) {
         watchEnabled = false;
         scope.pacenotes_data = args.pacenotes_data;
-        if (scope.selectedRowIndex == scope.pacenotes_data.length - 1)
-          scope.selectRow(scope.selectedRowIndex, false);
+        if (scope.pacenotes_data !== undefined && scope.selectedRowIndex == scope.pacenotes_data.length - 1)
+          scope. selectRow(scope.selectedRowIndex, false);
         watchEnabled = true;
       });
 
@@ -325,7 +328,11 @@ angular.module('beamng.apps')
           return;
 
         scope.selectedRowIndex = args.index;
-        document.querySelector('#pacenotes-list tbody').children[args.index].scrollIntoViewIfNeeded();
+        const tbody = document.querySelector('#pacenotes-list tbody');
+        if (tbody.children[args.index] === undefined)
+          return;
+
+        tbody.children[args.index].scrollIntoViewIfNeeded();
       });
 
       element.ready(function () {
