@@ -400,6 +400,7 @@ local function switchRallyFromRecce()
     M.mode = 'rally';
 
     M.recordingDistance = 0
+    M.distance_of_last_queued_note = M.last_distance
     M.savingRecce = false
 
     M.guiSendPacenoteData()
@@ -880,10 +881,10 @@ local function handleStopRecording()
 
     table.insert(M.pacenotes_data, newNote)
 
-    -- May have inserted out of order if in rally mode
-    if (M.mode == "rally") then
-        M.sortPacenotes()
-    end
+    -- The note may have been inserted out of order
+    M.sortPacenotes()
+
+    M.recordAtNote = false
 
     M.guiSendPacenoteData()
 
@@ -936,7 +937,7 @@ local function guiSendRallyData()
 end
 
 local function guiSendPacenoteData()
-    guihooks.trigger('PacenoteDataUpdate', {pacenotes_data = M.pacenotes_data})
+    guihooks.trigger('PacenoteDataUpdate', {pacenotes_data = M.pacenotes_data, recordAtNote = M.recordAtNote})
 end
 
 local function guiSendSelectedPacenote(index)

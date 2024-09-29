@@ -187,7 +187,7 @@ angular.module('beamng.apps')
       });
 
       scope.$watch('recordAtNote', function(newVal, oldVal) {
-        if (newVal !== oldVal) {
+        if (newVal !== oldVal && watchEnabled) {
           bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.recordAtNote = ${newVal}`);
 
           if (newVal) {
@@ -317,6 +317,7 @@ angular.module('beamng.apps')
 
       scope.$on('PacenoteDataUpdate', function(event, args) {
         watchEnabled = false;
+        scope.recordAtNote = args.recordAtNote;
         scope.pacenotes_data = args.pacenotes_data;
         if (scope.pacenotes_data !== undefined && scope.selectedRowIndex == scope.pacenotes_data.length - 1)
           scope. selectRow(scope.selectedRowIndex, false);
