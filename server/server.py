@@ -12,6 +12,34 @@ pacenotes_path = Path('pacenotes')
 # Initialize PyAudio
 p = pyaudio.PyAudio()
 
+# Set the sample rate and audio format
+SAMPLE_RATE = 44100
+FORMAT = pyaudio.paInt16
+CHANNELS = 1
+
+def list_microphones():
+    info = p.get_host_api_info_by_index(0)
+    num_devices = info.get('deviceCount')
+
+    num_mics = 0
+
+    print("Available microphones:")
+    for i in range(num_devices):
+        device_info = p.get_device_info_by_host_api_device_index(0, i)
+        # Check if the device is an input device
+        if device_info.get('maxInputChannels') > 0:
+            device_name = device_info.get('name')
+            print(f"Microphone {i+1}: {device_name}")
+            num_mics += 1
+
+    return num_mics
+
+num_devices = list_microphones()
+
+if num_devices == 0:
+    print("No microphones found. Connect a microphone and run this server again.")
+    exit()
+
 def playWf(wf):
     stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
                     channels=wf.getnchannels(),
@@ -30,11 +58,6 @@ def playWf(wf):
     stream.close()
 
     wf.rewind()
-
-# Set the sample rate and audio format
-SAMPLE_RATE = 44100
-FORMAT = pyaudio.paInt16
-CHANNELS = 1
 
 recording = False
 
