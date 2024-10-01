@@ -496,10 +496,11 @@ local function updateRally(dt)
     if my_veh == nil then return end
 
     local position = my_veh:getPosition()
-    -- local shortest_distance = math.huge
+    local reset_this_tick = false
 
     if computeDistSquared(position.x, position.y, position.z, M.last_position.x, M.last_position.y, M.last_position.z) > M.settings.reset_threshold^2 then
         resetRally()
+        reset_this_tick = true
     else
         updateDistance(position)
     end
@@ -514,7 +515,11 @@ local function updateRally(dt)
 
     -- if this speed is above 90, assume it is a reset and ignore it
     if speedAlongTrack > 90 then
-        speedAlongTrack = 90
+        if reset_this_tick then
+            speedAlongTrack = 0
+        else
+            speedAlongTrack = 90
+        end
     end
 
     queueUpUntil(checkpoint.d + M.settings.pacenote_playback.lookahead_distance_base + speedAlongTrack * M.settings.pacenote_playback.speed_multiplier)
@@ -591,7 +596,7 @@ local function updateRecce(dt)
 
         -- subtract out the direction vector
         local lastCheckpointPos = vec3(lastCheckpoint.x, lastCheckpoint.y, lastCheckpoint.z)
-        local lastCheckpointDir = (lastCheckpointPos - position):normalized()
+        local lastCheckpointDir = (position - lastCheckpointPos):normalized()
 
         if #M.checkpoints_array > 1 then
             dotProduct = lastCheckpointDir:dot(vec3(lastCheckpoint.dx, lastCheckpoint.dy, lastCheckpoint.dz))
