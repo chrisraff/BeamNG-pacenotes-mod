@@ -181,7 +181,7 @@ angular.module('beamng.apps')
       });
 
       scope.$watch('playbackVolume', function(newVal, oldVal) {
-        if (newVal !== oldVal) {
+        if (newVal !== oldVal && newVal !== undefined) {
           bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.settings.sound_data.volume = ${newVal}`);
         }
       });
@@ -301,6 +301,7 @@ angular.module('beamng.apps')
         watchEnabled = false;
         scope.panelOpen = args.panelOpen;
         scope.isRallyChanged = args.isRallyChanged;
+        scope.playbackVolume = args.playbackVolume;
         watchEnabled = true;
       });
 

@@ -118,6 +118,7 @@ local function onExtensionLoaded()
     local settingsFile = jsonReadFile('settings/sopo_pacenotes/settings.json')
     if settingsFile and settingsFile.settingsVersion == M.settings.settingsVersion then
         M.settings = settingsFile
+        M.guiSendGuiData()
     end
 end
 
