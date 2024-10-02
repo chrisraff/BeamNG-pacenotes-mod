@@ -139,6 +139,10 @@ angular.module('beamng.apps')
         scope.deleteConfirmationInput = '';
       }
 
+      scope.clearFilenameInput = function () {
+        scope.SharedDataService.newRallyId = '';
+      }
+
       scope.setRallyChanged = function (isRallyChanged) {
         scope.isRallyChanged = isRallyChanged;
         bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.guiConfig.isRallyChanged = ${isRallyChanged}`);
