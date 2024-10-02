@@ -243,14 +243,32 @@ angular.module('beamng.apps')
       }, true); // deep watch: true
 
       scope.selectRow = function (index, playSound = true) {
-        if (scope.selectedRowIndex === index) {
+        if (scope.selectedRowIndex === index && playSound) {
           return;
         }
-        scope.selectedRowIndex = index;
 
-        if (playSound && index !== null && scope.pacenotes_data.length > index)
-          bngApi.engineLua(`Engine.Audio.playOnce('AudioGui', 'art/sounds/' .. getCurrentLevelIdentifier() .. '/' .. extensions.scripts_sopo__pacenotes_extension.rallyId .. '/pacenotes/${scope.pacenotes_data[index].wave_name}', extensions.scripts_sopo__pacenotes_extension.settings.sound_data)`);
-      }
+        // check if the current continue distance field is focused
+        if (document.querySelector('#continue-distance').contains(document.activeElement)) {
+          // set the value and clear the input
+          bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.pacenotes_data[${scope.selectedRowIndex+1}].continueDistance = ${document.querySelector('#continue-distance').value}`);
+
+          document.querySelector('#continue-distance').value = '';
+        }
+
+        if (scope.pacenotes_data.length > index) {
+          scope.selectedRowIndex = index;
+
+          // scroll the selected row into view
+          const tbody = document.querySelector('#pacenotes-list tbody');
+          if (tbody.children[index] !== undefined)
+          {
+            tbody.children[index].scrollIntoViewIfNeeded();
+          }
+
+          if (playSound && index !== null)
+            bngApi.engineLua(`Engine.Audio.playOnce('AudioGui', 'art/sounds/' .. getCurrentLevelIdentifier() .. '/' .. extensions.scripts_sopo__pacenotes_extension.rallyId .. '/pacenotes/${scope.pacenotes_data[index].wave_name}', extensions.scripts_sopo__pacenotes_extension.settings.sound_data)`);
+          }
+        }
 
       scope.deleteContinueDistance = function () {
         if (scope.selectedRowIndex === null) { return }
@@ -333,12 +351,9 @@ angular.module('beamng.apps')
         if (!scope.followNote)
           return;
 
-        scope.selectedRowIndex = args.index;
-        const tbody = document.querySelector('#pacenotes-list tbody');
-        if (tbody.children[args.index] === undefined)
-          return;
-
-        tbody.children[args.index].scrollIntoViewIfNeeded();
+        if (scope.pacenotes_data.length > args.index) {
+          scope.selectRow(args.index, false);
+        }
       });
 
       element.ready(function () {
