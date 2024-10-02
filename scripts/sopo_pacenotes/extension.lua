@@ -914,6 +914,8 @@ local function guiSendMissionData()
     log('I', M.logTag, 'sending gui data')
     local rallyId = ''
     if M.rallyId then rallyId = M.rallyId end
+    if M.levelId == nil then M.levelId = getCurrentLevelIdentifier() end
+
     local data = {
         mode=M.mode,
         level=M.levelId,
