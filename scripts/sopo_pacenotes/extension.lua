@@ -31,6 +31,8 @@ M.guiConfig = {
     playbackVolume = 10
 }
 
+M.tempPlaybackVolumeModifier = 0
+
 M.checkpoints_array = nil
 M.checkpoint_index = nil
 M.pacenotes_data = nil
@@ -242,6 +244,11 @@ local function loadRally(rallyId)
     M.checkpoints_array = file[1]
     M.pacenotes_data = file[2]
 
+    if not (file[3] == nil) then
+        log('I', M.logTag, 'loading temporary playback volume modifier: ' .. file[3].playbackVolumeModifier)
+        M.tempPlaybackVolumeModifier = file[3].playbackVolumeModifier or 0
+    end
+
     resetRally()
 
     M.guiConfig.isRallyChanged = false
@@ -309,6 +316,8 @@ local function deleteRally()
     M.checkpoints_array = nil
     M.pacenotes_data = nil
 
+    M.tempPlaybackVolumeModifier = 0
+
     clearQueue()
 
     M.serverCloseMission()
@@ -331,6 +340,8 @@ local function cleanup()
     M.pacenotes_data = nil
 
     M.isRecordingNewPositions = false
+
+    M.tempPlaybackVolumeModifier = 0
 
     clearQueue()
 
@@ -539,7 +550,7 @@ local function updateAudioQueue(dt)
     -- play the sound
     if not currentSound.played then
         local path = 'art/sounds/' .. M.levelId .. '/' .. M.rallyId .. '/pacenotes/' .. currentSound.pacenote.wave_name
-        local result = Engine.Audio.playOnce('AudioGui', path, M.settings.sound_data)
+        local result = Engine.Audio.playOnce('AudioGui', path, {volume=M.settings.sound_data.volume + M.tempPlaybackVolumeModifier})
 
         if result ~= nil then
             currentSound.time = result.len
@@ -727,7 +738,14 @@ end
 local function savePacenoteData()
     if M.rallyId == nil then return end
 
-    local file = jsonWriteFile('art/sounds/' .. M.levelId .. '/' .. M.rallyId .. '/pacenotes.json', {M.checkpoints_array, M.pacenotes_data})
+    local new_data = {M.checkpoints_array, M.pacenotes_data}
+
+    if M.tempPlaybackVolumeModifier ~= 0 then
+        new_data[3] = new_data[3] or {}
+        new_data[3].tempPlaybackVolumeModifier = M.tempPlaybackVolumeModifier
+    end
+
+    local file = jsonWriteFile('art/sounds/' .. M.levelId .. '/' .. M.rallyId .. '/pacenotes.json', new_data)
     if file then
         log('I', M.logTag, 'saved pacenote data')
         M.guiConfig.isRallyChanged = false

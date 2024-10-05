@@ -271,7 +271,7 @@ angular.module('beamng.apps')
           }
 
           if (playSound && index !== null)
-            bngApi.engineLua(`Engine.Audio.playOnce('AudioGui', 'art/sounds/' .. getCurrentLevelIdentifier() .. '/' .. extensions.scripts_sopo__pacenotes_extension.rallyId .. '/pacenotes/${scope.pacenotes_data[index].wave_name}', extensions.scripts_sopo__pacenotes_extension.settings.sound_data)`);
+            bngApi.engineLua(`Engine.Audio.playOnce('AudioGui', 'art/sounds/' .. getCurrentLevelIdentifier() .. '/' .. extensions.scripts_sopo__pacenotes_extension.rallyId .. '/pacenotes/${scope.pacenotes_data[index].wave_name}', {volume=extensions.scripts_sopo__pacenotes_extension.settings.sound_data.volume + extensions.scripts_sopo__pacenotes_extension.tempPlaybackVolumeModifier})`);
           }
         }
 
