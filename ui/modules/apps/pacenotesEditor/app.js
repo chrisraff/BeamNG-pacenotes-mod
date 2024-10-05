@@ -248,7 +248,7 @@ angular.module('beamng.apps')
         }
 
         // check if the current continue distance field is focused
-        if (document.querySelector('#continue-distance').contains(document.activeElement)) {
+        if (document.querySelector('#continue-distance').contains(document.activeElement) && document.querySelector('#continue-distance').value !== '') {
           // set the value and clear the input
           bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.pacenotes_data[${scope.selectedRowIndex+1}].continueDistance = ${document.querySelector('#continue-distance').value}`);
 
