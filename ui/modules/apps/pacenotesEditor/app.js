@@ -152,9 +152,9 @@ angular.module('beamng.apps')
         // find the closest pacenote to the given distance
         let distances = document.querySelectorAll('.distance');
         let closestIndex = 0;
-        let closestDistance = Math.abs(distances[0].querySelector('input').value - scope.distance);
+        let closestDistance = Math.abs(Number(distances[0].querySelector('input').value) - scope.distance);
         distances.forEach((distance, index) => {
-          let currentDistance = Math.abs(distance.querySelector('input').value - scope.distance);
+          let currentDistance = Math.abs(Number(distance.querySelector('input').value) - scope.distance);
           if (currentDistance < closestDistance) {
             closestDistance = currentDistance;
             closestIndex = index;
@@ -169,6 +169,11 @@ angular.module('beamng.apps')
       scope.$watch('panelOpen', function(newVal, oldVal) {
         if (newVal !== oldVal) {
           bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.guiConfig.panelOpen = ${newVal}`);
+
+          // if the panel just opened, jump to the selected row
+          if (newVal) {
+            scope.selectRow(scope.selectedRowIndex, false);
+          }
         }
       })
 
