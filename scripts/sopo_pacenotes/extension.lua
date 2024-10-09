@@ -223,7 +223,7 @@ end
 local function loadRally(rallyId)
     M.levelId = getCurrentLevelIdentifier()
 
-    local file = jsonReadFile('art/sounds/' .. M.levelId .. '/' .. rallyId .. '/pacenotes.json')
+    local file = jsonReadFile('pacenotes_sp/' .. M.levelId .. '/' .. rallyId .. '/pacenotes.json')
 
     if not file then
         log('E', M.logTag, 'failed to load pacenote data')
@@ -274,8 +274,8 @@ local function copyRally(newId)
     local oldId = M.rallyId
     M.rallyId = newId
 
-    local oldPath = 'art/sounds/' .. M.levelId .. '/' .. oldId
-    local newPath = 'art/sounds/' .. M.levelId .. '/' .. newId
+    local oldPath = 'pacenotes_sp/' .. M.levelId .. '/' .. oldId
+    local newPath = 'pacenotes_sp/' .. M.levelId .. '/' .. newId
 
     -- copy the folder
     if FS:directoryExists(oldPath) then
@@ -299,7 +299,7 @@ end
 local function deleteRally()
     log('I', M.logTag, 'Deleting rally')
 
-    local path = 'art/sounds/' .. M.levelId .. '/'.. M.rallyId
+    local path = 'pacenotes_sp/' .. M.levelId .. '/'.. M.rallyId
     if FS:directoryExists(path) and FS:fileExists(path .. '/pacenotes.json') then
         FS:removeFile(path .. '/pacenotes.json')
 
@@ -332,7 +332,7 @@ local function cleanup()
     end
 
     if M.guiConfig.isRallyChanged then
-        jsonWriteFile('art/sounds/' .. M.levelId .. '/' .. M.rallyId .. '/pacenotes_autosave.json', M.pacenotes_data)
+        jsonWriteFile('pacenotes_sp/' .. M.levelId .. '/' .. M.rallyId .. '/pacenotes_autosave.json', M.pacenotes_data)
     end
     M.mode = "none"
     M.rallyId = nil
@@ -549,7 +549,7 @@ local function updateAudioQueue(dt)
 
     -- play the sound
     if not currentSound.played then
-        local path = 'art/sounds/' .. M.levelId .. '/' .. M.rallyId .. '/pacenotes/' .. currentSound.pacenote.wave_name
+        local path = 'pacenotes_sp/' .. M.levelId .. '/' .. M.rallyId .. '/pacenotes/' .. currentSound.pacenote.wave_name
         local result = Engine.Audio.playOnce('AudioGui', path, {volume=M.settings.sound_data.volume + M.tempPlaybackVolumeModifier})
 
         if result ~= nil then
@@ -745,7 +745,7 @@ local function savePacenoteData()
         new_data[3].tempPlaybackVolumeModifier = M.tempPlaybackVolumeModifier
     end
 
-    local file = jsonWriteFile('art/sounds/' .. M.levelId .. '/' .. M.rallyId .. '/pacenotes.json', new_data)
+    local file = jsonWriteFile('pacenotes_sp/' .. M.levelId .. '/' .. M.rallyId .. '/pacenotes.json', new_data)
     if file then
         log('I', M.logTag, 'saved pacenote data')
         M.guiConfig.isRallyChanged = false
@@ -800,7 +800,7 @@ end
 
 local function serverUpdateDataPath()
     if M.micServer ~= nil then
-        M.micServer:send('data_path ' .. FS:getFileRealPath('/art/sounds'))
+        M.micServer:send('data_path ' .. FS:getFileRealPath('/pacenotes_sp'))
     end
 end
 
@@ -884,6 +884,8 @@ local function handleStopRecording()
 
     if M.micServer == nil then
         log('I', M.logTag, 'Didn\'t stop recording: not connected to server')
+        M.isRecording = false
+        M.guiSendMicData()
         return
     end
 

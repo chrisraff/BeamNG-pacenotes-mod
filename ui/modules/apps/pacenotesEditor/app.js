@@ -89,8 +89,8 @@ angular.module('beamng.apps')
       }
 
       scope.newRally = function() {
-        // first, check if there's an existing file at 'art/sounds/' .. getCurrentLevelIdentifier() .. '/' .. newRallyId .. '/pacenotes.json' using the lua file system
-        bngApi.engineLua(`FS:fileExists('art/sounds/' .. getCurrentLevelIdentifier() .. '/' .. '${SharedDataService.newRallyId}' .. '/pacenotes.json')`, (fileExists) => {
+        // first, check if there's an existing file at 'pacenotes_sp/' .. getCurrentLevelIdentifier() .. '/' .. newRallyId .. '/pacenotes.json' using the lua file system
+        bngApi.engineLua(`FS:fileExists('pacenotes_sp/' .. getCurrentLevelIdentifier() .. '/' .. '${SharedDataService.newRallyId}' .. '/pacenotes.json')`, (fileExists) => {
           if (fileExists)
           {
             // file exists, tell the user and don't make new project
@@ -271,7 +271,7 @@ angular.module('beamng.apps')
           }
 
           if (playSound && index !== null)
-            bngApi.engineLua(`Engine.Audio.playOnce('AudioGui', 'art/sounds/' .. getCurrentLevelIdentifier() .. '/' .. extensions.scripts_sopo__pacenotes_extension.rallyId .. '/pacenotes/${scope.pacenotes_data[index].wave_name}', {volume=extensions.scripts_sopo__pacenotes_extension.settings.sound_data.volume + extensions.scripts_sopo__pacenotes_extension.tempPlaybackVolumeModifier})`);
+            bngApi.engineLua(`Engine.Audio.playOnce('AudioGui', 'pacenotes_sp/' .. getCurrentLevelIdentifier() .. '/' .. extensions.scripts_sopo__pacenotes_extension.rallyId .. '/pacenotes/${scope.pacenotes_data[index].wave_name}', {volume=extensions.scripts_sopo__pacenotes_extension.settings.sound_data.volume + extensions.scripts_sopo__pacenotes_extension.tempPlaybackVolumeModifier})`);
           }
         }
 
