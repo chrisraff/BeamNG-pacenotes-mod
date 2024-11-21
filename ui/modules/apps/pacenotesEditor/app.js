@@ -99,7 +99,7 @@ angular.module('beamng.apps')
           else
           {
             // make new project
-            bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.newRally('${SharedDataService.newRallyId}')`);
+            bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.loadOrNewRally('${SharedDataService.newRallyId}')`);
           }
         });
       }
