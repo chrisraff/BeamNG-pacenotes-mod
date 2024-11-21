@@ -742,7 +742,7 @@ local function savePacenoteData()
 
     if M.tempPlaybackVolumeModifier ~= 0 then
         new_data[3] = new_data[3] or {}
-        new_data[3].tempPlaybackVolumeModifier = M.tempPlaybackVolumeModifier
+        new_data[3].playbackVolumeModifier = M.tempPlaybackVolumeModifier
     end
 
     local file = jsonWriteFile('pacenotes_sp/' .. M.levelId .. '/' .. M.rallyId .. '/pacenotes.json', new_data)
