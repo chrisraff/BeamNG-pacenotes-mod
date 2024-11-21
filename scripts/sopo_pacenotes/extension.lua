@@ -771,6 +771,9 @@ local function connectToMicServer()
     if not result then
         M.micServer = nil
         log('I', M.logTag, 'couldn\'t connect to server')
+        guihooks.trigger('toastrMsg', {type = "warning", title = "Coudln't Connect", msg = "Check that the mic server is running.", config = {timeOut = 7000}})
+        M.guiSendMicData()
+        return
     end
     log('I', M.logTag, 'connected to server')
 
