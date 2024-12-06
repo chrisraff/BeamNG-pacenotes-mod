@@ -31,7 +31,7 @@ M.guiConfig = {
     playbackVolume = 10
 }
 
-M.tempPlaybackVolumeModifier = 0
+M.tempPlaybackVolumeMultiplier = 1
 
 M.checkpoints_array = nil
 M.checkpoint_index = nil
@@ -244,9 +244,9 @@ local function loadRally(rallyId)
     M.checkpoints_array = file[1]
     M.pacenotes_data = file[2]
 
-    if not (file[3] == nil) then
-        log('I', M.logTag, 'loading temporary playback volume modifier: ' .. file[3].playbackVolumeModifier)
-        M.tempPlaybackVolumeModifier = file[3].playbackVolumeModifier or 0
+    if file[3] and file[3].playbackVolumeMultiplier then
+        log('I', M.logTag, 'loading temporary playback volume multiplier: ' .. file[3].playbackVolumeMultiplier)
+        M.tempPlaybackVolumeMultiplier = file[3].playbackVolumeMultiplier
     end
 
     resetRally()
@@ -316,7 +316,7 @@ local function deleteRally()
     M.checkpoints_array = nil
     M.pacenotes_data = nil
 
-    M.tempPlaybackVolumeModifier = 0
+    M.tempPlaybackVolumeMultiplier = 1
 
     clearQueue()
 
@@ -341,7 +341,7 @@ local function cleanup()
 
     M.isRecordingNewPositions = false
 
-    M.tempPlaybackVolumeModifier = 0
+    M.tempPlaybackVolumeMultiplier = 1
 
     clearQueue()
 
@@ -550,7 +550,7 @@ local function updateAudioQueue(dt)
     -- play the sound
     if not currentSound.played then
         local path = 'pacenotes_sp/' .. M.levelId .. '/' .. M.rallyId .. '/pacenotes/' .. currentSound.pacenote.wave_name
-        local result = Engine.Audio.playOnce('AudioGui', path, {volume=M.settings.sound_data.volume + M.tempPlaybackVolumeModifier})
+        local result = Engine.Audio.playOnce('AudioGui', path, {volume=M.settings.sound_data.volume * M.tempPlaybackVolumeMultiplier})
 
         if result ~= nil then
             currentSound.time = result.len
@@ -740,9 +740,9 @@ local function savePacenoteData()
 
     local new_data = {M.checkpoints_array, M.pacenotes_data}
 
-    if M.tempPlaybackVolumeModifier ~= 0 then
+    if M.tempPlaybackVolumeMultiplier ~= 1 then
         new_data[3] = new_data[3] or {}
-        new_data[3].playbackVolumeModifier = M.tempPlaybackVolumeModifier
+        new_data[3].playbackVolumeMultiplier = M.tempPlaybackVolumeMultiplier
     end
 
     local file = jsonWriteFile('pacenotes_sp/' .. M.levelId .. '/' .. M.rallyId .. '/pacenotes.json', new_data)
