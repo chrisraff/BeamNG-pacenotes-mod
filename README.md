@@ -2,6 +2,9 @@
 
 This mod allows you to easily record your own pacenotes completely within *BeamNG.drive* (after a one-time setup), and seamlessly playback pacenotes without any additional steps.
 
+### YouTube showcase:
+[![Pacenotes Demo](https://img.youtube.com/vi/UfHfOpgCGWE/0.jpg)](https://www.youtube.com/watch?v=UfHfOpgCGWE)
+
 ## Key Features
 - No robotic-sounding pacenotes
 - No need for the map editor
@@ -9,11 +12,11 @@ This mod allows you to easily record your own pacenotes completely within *BeamN
 - Easy adjustments to existing pacenotes
 
 ## How to Play Pacenotes
-1. **Install this mod** - To install it from this repo, make a zip folder with the following folders and add it to your `mods/repo` folder:
+1. **Install this mod** from the [BeamNG mods repo](https://www.beamng.com/resources/custom-rally-pacenotes.32263/) or this GitHub repo - To install it from this repo, make a zip folder with the following folders and add it to your `mods/repo` folder:
 - lua
 - scripts
 - ui
-2. Obtain or record your own pacenotes - the GitHub repo does not include any prerecorded pacenotes, but I may share zip files of prerecorded pacenotes soon here or through BeamNG forums.
+2. Obtain or record your own pacenotes - the GitHub repo does not include any prerecorded pacenotes, but I have shared [pre-recorded pacenotes as a seperate mod](https://www.beamng.com/resources/custom-pacenotes-pre-recorded-pack.32877/).
 3. **Start the scenario or time trial** – Pacenotes will load and play automatically.
 
 ## Tuning Playback
@@ -35,7 +38,7 @@ This mod allows you to easily record your own pacenotes completely within *BeamN
 ### One-time setup steps:
 1. **Install Python** (if you don’t have it). You can get it from many places, but the [Microsoft App Store](https://apps.microsoft.com/detail/9nrwmjp3717k?hl=en-US&gl=US) might be the easiest option.
 2. **Install the necessary modules:**
-   - `pyAudio`
+   - `pyaudio`
    - `pathlib` (this may already be included in some installations)
 3. **Launch the mic server**:
    - Open **CMD** or **PowerShell**, and navigate to this repo's `server` folder.
