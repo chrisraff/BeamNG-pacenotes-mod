@@ -367,12 +367,18 @@ local function getPath(scenario)
     return nil
 end
 
-local function setup(scenarioOrMission)
+local function setup(scenarioOrMission, isReversed)
+    isReversed = isReversed or false
+
     if scenarioOrMission then
         local newPath = getPath(scenarioOrMission)
 
         -- Extract the first part of the path (before the first '/')
         local level, remainingPath = newPath:match("([^/]+)/(.+)")
+
+        if isReversed then
+            remainingPath = remainingPath .. '_reverse'
+        end
 
         if M.settings.rallyPaths[level] == nil then
             M.settings.rallyPaths[level] = {}
@@ -425,7 +431,11 @@ local function onAnyMissionChanged(started, mission, userSettings)
     log('I', M.logTag, 'onAnyMissionChanged: ' .. started)
     if started == "started" then
         log('I', M.logTag, 'starting rally')
-        setup(mission)
+        local isReversed = false;
+        if userSettings and userSettings.reverse then
+            isReversed = userSettings.reverse or false
+        end
+        setup(mission, isReversed)
     elseif started == "stopped" then
         cleanup()
     end
