@@ -47,6 +47,8 @@ M.last_position = vec3(0, 0, 0)
 M.audioQueue = {}
 M.audioQueueClearing = false
 
+M.isAnalyzing = true
+
 -- Recording variables
 M.checkpointResolution = 2 -- meters between stage checkpoints
 M.checkpointMaxEcc = 10 -- prevent adding a checkpoint in a restart
@@ -144,13 +146,15 @@ local function queueUpUntil(lookahead_target)
 
             local veh_speed = be:getPlayerVehicle(0):getVelocity():length() * 3.6 -- convert m/s to km/h
 
-            note.analysis = {
-                queueDistance = M.last_distance,
-                queueSpeed = roundNear(veh_speed, 0.001),
-                playbackTime = 0,
-                playStartDistance = nil,
-                playEndDistance = nil
-            }
+            if M.isAnalyzing then
+                note.analysis = {
+                    queueDistance = M.last_distance,
+                    queueSpeed = roundNear(veh_speed, 0.001),
+                    playbackTime = 0,
+                    playStartDistance = nil,
+                    playEndDistance = nil
+                }
+            end
         end
     end
     M.distance_of_last_queued_note = math.max(lookahead_target, M.distance_of_last_queued_note)
@@ -568,7 +572,7 @@ local function updateAudioQueue(dt)
     local currentSound = M.audioQueue[1]
 
     -- play the sound
-    if not currentSound.played then
+    if not currentSound.played and M.rallyId then
         local path = 'pacenotes_sp/' .. M.levelId .. '/' .. M.rallyId .. '/pacenotes/' .. currentSound.pacenote.wave_name
         local result = Engine.Audio.playOnce('AudioGui', path, {volume=M.settings.sound_data.volume * M.tempPlaybackVolumeMultiplier})
 
@@ -577,7 +581,7 @@ local function updateAudioQueue(dt)
         else
             currentSound.time = 0
         end
-        currentSound.played = 0
+        currentSound.played = true
 
         if currentSound.pacenote.analysis then
             currentSound.pacenote.analysis.playStartDistance = M.last_distance
@@ -590,14 +594,15 @@ local function updateAudioQueue(dt)
 
         local finishedPlaying = currentSound.time <= 0
         local continueCondition = currentSound.pacenote.continueDistance == nil or currentSound.pacenote.d - currentSound.pacenote.continueDistance <= M.last_distance
+
+        if finishedPlaying and currentSound.pacenote.analysis and not currentSound.pacenote.analysis.playEndDistance then
+            currentSound.pacenote.analysis.playEndDistance = M.last_distance
+            M.guiSendPacenoteData()
+        end
+
         if finishedPlaying and (continueCondition or M.audioQueueClearing) then
             table.remove(M.audioQueue, 1)
             M.audioQueueClearing = false
-        end
-
-        if currentSound.pacenote.analysis then
-            currentSound.pacenote.analysis.playEndDistance = M.last_distance
-            M.guiSendPacenoteData()
         end
     end
 end
@@ -998,7 +1003,7 @@ local function guiSendRallyData()
 end
 
 local function guiSendPacenoteData()
-    guihooks.trigger('PacenoteDataUpdate', {pacenotes_data = M.pacenotes_data, recordAtNote = M.recordAtNote})
+    guihooks.trigger('PacenoteDataUpdate', {pacenotes_data = M.pacenotes_data, recordAtNote = M.recordAtNote, isAnalyzing = M.isAnalyzing})
 end
 
 local function guiSendSelectedPacenote(index)

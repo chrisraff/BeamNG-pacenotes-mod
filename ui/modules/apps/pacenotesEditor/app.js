@@ -59,6 +59,7 @@ angular.module('beamng.apps')
 
       scope.followNote = true;
       scope.recordAtNote = false;
+      scope.isAnalyzing = true;
 
       // editor table:
       scope.selectedRowIndex = null;
@@ -223,6 +224,12 @@ angular.module('beamng.apps')
         }
       });
 
+      scope.$watch('isAnalyzing', function(newVal, oldVal) {
+        if (newVal !== oldVal && watchEnabled) {
+          bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.isAnalyzing = ${newVal}`);
+        }
+      });
+
       scope.$watch('pacenotes_data[selectedRowIndex].d', function (newVal, oldVal) {
         if (newVal !== oldVal && scope.recordAtNote) {
           bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.recordingDistance = ${newVal}`);
@@ -366,6 +373,7 @@ angular.module('beamng.apps')
       scope.$on('PacenoteDataUpdate', function(event, args) {
         watchEnabled = false;
         scope.recordAtNote = args.recordAtNote;
+        scope.isAnalyzing = args.isAnalyzing;
         scope.pacenotes_data = args.pacenotes_data;
         if (scope.pacenotes_data !== undefined && scope.selectedRowIndex == scope.pacenotes_data.length - 1)
           scope.selectRow(scope.selectedRowIndex, false);
