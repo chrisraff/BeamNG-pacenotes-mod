@@ -131,6 +131,10 @@
             font-weight: bold;
         }
 
+        .pacenotes-editor td.analysis-number {
+            text-align: right;
+        }
+
         .pacenotes-editor input::placeholder {
             color: rgba(240, 240, 240, 0.9);
         }
@@ -305,8 +309,8 @@
                         <h3 class="secondary-info">{{pacenote.name || pacenote.wave_name}}</h3>
                         <span class="secondary-info" style="position: absolute; right: 5px; top: 1px;">Distance: {{pacenote.d}}</span>
                         <div ng-show="pacenote.analysis">
-                            Qd: {{pacenote.analysis.queueDistance.toFixed(2)}}
                             Qv: {{pacenote.analysis.queueSpeed.toFixed(2)}}
+                            Qd: {{pacenote.analysis.queueDistance.toFixed(2)}}
                             Ps: {{pacenote.analysis.playStartDistance.toFixed(2)}}
                             Pe: {{pacenote.analysis.playEndDistance.toFixed(2)}}
                             Pt: {{pacenote.analysis.playbackTime.toFixed(2)}}
@@ -325,7 +329,7 @@
             <label for="record-at-note">Record at selected</label>
         </div>
 
-        <div id="selected-row-details" ng-show="selectedRowIndex !== null">
+        <div id="selected-row-details-edit" ng-show="selectedRowIndex !== null && viewMode == 'edit'">
             <label for="continue-distance" title="Useful for hairpins: how close a user must be to this point before the next note can be played.">Continue Distance:</label>
             <input type="number" id="continue-distance" ng-model="pacenotes_data[selectedRowIndex].continueDistance" ng-model-options="{ updateOn: 'blur keydown', debounce: {'blur': 0, 'keydown': 500} }">
             <button id="clear-continue-distance" ng-click="deleteContinueDistance()" ng-disabled="pacenotes_data[selectedRowIndex].continueDistance === undefined">X</button>
@@ -335,6 +339,47 @@
             <button id="delete-pacenote" ng-click="deletePacenote()" ng-model-options="{ debounce: 250 }">
                 {{ pacenotes_data[selectedRowIndex].disabled ? 'Restore Pacenote' : 'Delete Pacenote' }}
             </button>
+        </div>
+
+        <div id="selected-row-details-analyze" ng-show="selectedRowIndex !== null && viewMode == 'analyze'">
+            <table style="table-layout: fixed; width: 100%;">
+                <colgroup>
+                    <col style="width: 40%;">
+                    <col style="width: 20%;">
+                    <col style="width: 10%;">
+                    <col style="width: 20%;">
+                </colgroup>
+                <tr>
+                    <td>Speed Queued:</td>
+                    <td class="analysis-number">{{pacenotes_data[selectedRowIndex].analysis && pacenotes_data[selectedRowIndex].analysis.queueSpeed}}</td>
+                    <td style="width: 3em;">km/h</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>Distance Queued:</td>
+                    <td class="analysis-number">{{pacenotes_data[selectedRowIndex].analysis && pacenotes_data[selectedRowIndex].analysis.queueDistance}}</td>
+                    <td style="width: 3em;">m</td>
+                    <td class="analysis-number">{{pacenotes_data[selectedRowIndex].analysis && (pacenotes_data[selectedRowIndex].d - pacenotes_data[selectedRowIndex].analysis.queueDistance).toFixed(3)}}</td>
+                </tr>
+                <tr>
+                    <td>Distance Play Started:</td>
+                    <td class="analysis-number">{{pacenotes_data[selectedRowIndex].analysis && pacenotes_data[selectedRowIndex].analysis.playStartDistance}}</td>
+                    <td style="width: 3em;">m</td>
+                    <td class="analysis-number">{{pacenotes_data[selectedRowIndex].analysis && (pacenotes_data[selectedRowIndex].d - pacenotes_data[selectedRowIndex].analysis.playStartDistance).toFixed(3)}}</td>
+                </tr>
+                <tr>
+                    <td>Distance Play Ended:</td>
+                    <td class="analysis-number">{{pacenotes_data[selectedRowIndex].analysis && pacenotes_data[selectedRowIndex].analysis.playEndDistance}}</td>
+                    <td style="width: 3em;">m</td>
+                    <td class="analysis-number">{{pacenotes_data[selectedRowIndex].analysis && (pacenotes_data[selectedRowIndex].d - pacenotes_data[selectedRowIndex].analysis.playEndDistance).toFixed(3)}}</td>
+                </tr>
+                <tr>
+                    <td>Playback Time:</td>
+                    <td class="analysis-number">{{pacenotes_data[selectedRowIndex].analysis && pacenotes_data[selectedRowIndex].analysis.playbackTime}}</td>
+                    <td style="width: 3em;">s</td>
+                    <td></td>
+                </tr>
+            </table>
         </div>
 
         <div ng-show="mode !== 'none'">
