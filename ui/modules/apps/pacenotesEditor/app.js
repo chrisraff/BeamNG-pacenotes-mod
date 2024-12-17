@@ -55,6 +55,7 @@ angular.module('beamng.apps')
       scope.playbackVolume = 10;
       scope.closeIgnoreUnsavedRallyChanges = false;
       scope.SharedDataService = SharedDataService;
+      scope.viewMode = 'edit';
 
       scope.followNote = true;
       scope.recordAtNote = false;
@@ -148,21 +149,37 @@ angular.module('beamng.apps')
         bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.guiConfig.isRallyChanged = ${isRallyChanged}`);
       }
 
+      scope.toggleViewMode = function () {
+        if (scope.viewMode != 'edit') {
+          scope.viewMode = 'edit';
+        } else {
+          scope.viewMode = 'analyze';
+        }
+
+        // jump to the selected row
+        // new section won't be visible immediately - wait a bit
+        // TODO improve
+        $timeout(function() {
+          if (scope.selectedRowIndex !== null) {
+            scope.selectRow(scope.selectedRowIndex, false); 
+          }
+        }, 100);
+      }
+
       scope.jumpToDistance = function () {
         // find the closest pacenote to the given distance
-        let distances = document.querySelectorAll('.distance');
         let closestIndex = 0;
-        let closestDistance = Math.abs(Number(distances[0].querySelector('input').value) - scope.distance);
-        distances.forEach((distance, index) => {
-          let currentDistance = Math.abs(Number(distance.querySelector('input').value) - scope.distance);
+        let closestDistance = Infinity;
+        scope.pacenotes_data.forEach((pacenote, index) => {
+          let currentDistance = Math.abs(pacenote.d - scope.distance);
           if (currentDistance < closestDistance) {
             closestDistance = currentDistance;
             closestIndex = index;
           }
         });
 
-        // scroll into view
-        distances[closestIndex].scrollIntoViewIfNeeded();
+        // select the closest row
+        scope.selectRow(closestIndex, false);
       }
 
       // Watched variables
@@ -264,10 +281,13 @@ angular.module('beamng.apps')
           scope.selectedRowIndex = index;
 
           // scroll the selected row into view
-          const tbody = document.querySelector('#pacenotes-list tbody');
-          if (tbody.children[index] !== undefined)
-          {
-            tbody.children[index].scrollIntoViewIfNeeded();
+          const selectedItem = document.querySelectorAll(`.pacenote-data-representation[data-index="${index}"]`);
+          // for all, scroll into view if visible
+          for (let i = 0; i < selectedItem.length; i++) {
+            const element = selectedItem[i];
+            if (element.offsetParent !== null) {
+              element.scrollIntoViewIfNeeded();
+            }
           }
 
           if (playSound && index !== null)
@@ -348,7 +368,7 @@ angular.module('beamng.apps')
         scope.recordAtNote = args.recordAtNote;
         scope.pacenotes_data = args.pacenotes_data;
         if (scope.pacenotes_data !== undefined && scope.selectedRowIndex == scope.pacenotes_data.length - 1)
-          scope. selectRow(scope.selectedRowIndex, false);
+          scope.selectRow(scope.selectedRowIndex, false);
         watchEnabled = true;
       });
 

@@ -141,6 +141,16 @@ local function queueUpUntil(lookahead_target)
             table.insert(M.audioQueue, newSound)
             M.guiSendSelectedPacenote(i);
             log('I', M.logTag, 'queing note ' .. i)
+
+            local veh_speed = be:getPlayerVehicle(0):getVelocity():length()
+
+            note.analysis = {
+                queueDistance = M.last_distance,
+                queueSpeed = veh_speed,
+                playbackTime = 0,
+                playStartDistance = nil,
+                playEndDistance = nil
+            }
         end
     end
     M.distance_of_last_queued_note = math.max(lookahead_target, M.distance_of_last_queued_note)
@@ -569,6 +579,9 @@ local function updateAudioQueue(dt)
         end
         currentSound.played = 0
 
+        currentSound.pacenote.analysis.playStartDistance = M.last_distance
+        currentSound.pacenote.analysis.playbackTime = currentSound.time
+
     -- track the time of the sound
     else
         currentSound.time = currentSound.time - dt
@@ -579,6 +592,9 @@ local function updateAudioQueue(dt)
             table.remove(M.audioQueue, 1)
             M.audioQueueClearing = false
         end
+
+        currentSound.pacenote.analysis.playEndDistance = M.last_distance
+        M.guiSendPacenoteData()
     end
 end
 

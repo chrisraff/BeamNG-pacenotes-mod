@@ -47,11 +47,48 @@
             background-color: red;
         }
 
+        .pacenotes-editor .secondary-info {
+            color: lightgray;
+            font-weight: normal;
+        }
+
         /* TODO switch to flexboxes so table height can be smarter */
         #pacenotes-list {
             height: 300px;
             resize: vertical;
             overflow-y: auto;
+        }
+
+        .pacenotes-editor .view-mode-selector {
+            display: flex;
+            flex-direction: row;
+            justify-content: flex-end;
+            text-align: right;
+            margin: 5px;
+        }
+        .pacenotes-editor .view-mode-selector div {
+            background-color: #333;
+            padding-left: 4px;
+            padding-right: 4px;
+            font-weight: normal;
+        }
+
+        .pacenotes-editor .view-mode-selector div.view-mode-selected {
+            background-color: lightgray;
+            color: black;
+            font-weight: bold;
+            border: 1px solid black;
+        }
+
+        .pacenotes-editor .analysis-instance {
+            margin: 5px;
+            border: 2px solid gray;
+            border-radius: 3px;
+            background-color: rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+        .pacenotes-editor .analysis-instance h3 {
+            margin: 1px;
         }
 
         .pacenotes-editor table {
@@ -238,9 +275,14 @@
             </button>
         </details>
 
+        <div class='view-mode-selector' ng-click="toggleViewMode()">
+            <div ng-class="{'view-mode-selected': viewMode == 'edit'}">Edit</div>
+            <div ng-class="{'view-mode-selected': viewMode == 'analyze'}">Analyze</div>
+        </div>
+
         <div ng-show="mode !== 'none'">
             <div id="pacenotes-list">
-                <table>
+                <table ng-show="viewMode == 'edit'">
                     <thead>
                         <tr>
                             <th>Name</th>
@@ -248,7 +290,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr ng-repeat="pacenote in pacenotes_data" ng-click="selectRow($index)" ng-class="{'selected-row': $index === selectedRowIndex, 'disabled-row': pacenotes_data[$index].disabled}" ng-model-options="{ debounce: 100 }">
+                        <tr class="pacenote-data-representation" data-index="{{$index}}" ng-repeat="pacenote in pacenotes_data" ng-click="selectRow($index)" ng-class="{'selected-row': $index === selectedRowIndex, 'disabled-row': pacenotes_data[$index].disabled}" ng-model-options="{ debounce: 100 }">
                             <td>
                                 <input type="text" ng-model="pacenotes_data[$index].name" ng-model-options="{ updateOn: 'blur keydown', debounce: {'blur': 0, 'keydown': 500} }" placeholder="{{pacenotes_data[$index].wave_name }}" ng-focus="selectRow($index)">
                             </td>
@@ -258,6 +300,22 @@
                         </tr>
                     </tbody>
                 </table>
+                <div id="analysis-list" ng-show="viewMode == 'analyze'">
+                    <div class="pacenote-data-representation analysis-instance" data-index="{{$index}}" ng-repeat="pacenote in pacenotes_data" ng-click="selectRow($index)" ng-class="{'selected-row': $index === selectedRowIndex, 'disabled-row': pacenotes_data[$index].disabled}" ng-model-options="{ debounce: 100 }">
+                        <h3 class="secondary-info">{{pacenote.name || pacenote.wave_name}}</h3>
+                        <span class="secondary-info" style="position: absolute; right: 5px; top: 1px;">Distance: {{pacenote.d}}</span>
+                        <div ng-show="pacenote.analysis">
+                            Qd: {{pacenote.analysis.queueDistance.toFixed(2)}}
+                            Qv: {{pacenote.analysis.queueSpeed.toFixed(2)}}
+                            Ps: {{pacenote.analysis.playStartDistance.toFixed(2)}}
+                            Pe: {{pacenote.analysis.playEndDistance.toFixed(2)}}
+                            Pt: {{pacenote.analysis.playbackTime.toFixed(2)}}
+                        </div>
+                        <div class="secondary-info" ng-show="pacenote.analysis === undefined">
+                            Drive to this point to get analysis 
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <input type="checkbox" id="follow-note" ng-model="followNote">
