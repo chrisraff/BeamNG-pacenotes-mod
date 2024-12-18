@@ -39,6 +39,22 @@
             padding-left: 10px;
         }
 
+        .pacenotes-editor .hover-hint {
+            position: relative;
+        }
+
+        .hover-hint:hover::after {
+            content: attr(data-hover);
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 2px;
+            font-size: 90%;
+            font-weight: normal;
+            z-index: 1;
+        }
+
         .pacenotes-editor .recording-lamp {
             display: inline-block;
             width: 10px;
@@ -261,11 +277,11 @@
         <details>
             <summary>Playback tuning</summary>
             <p>
-                Lookahead distance:
+                <span class="hover-hint" data-hover="Start playing a pacenote X meters ahead.">Lookahead Distance:</span>
                 <input type="number" id="playback-lookahead" ng-model="playbackLookahead">
             </p>
             <p>
-                Speed Multiplier:
+                <span class="hover-hint" data-hover="Adds additonal lookahead distance based on car speed.">Car Speed Multiplier:</span>
                 <input type="number" id="speed-multiplier" ng-model="speedMultiplier">
             </p>
             <p>
@@ -284,7 +300,7 @@
             </button>
         </details>
 
-        <div class='view-mode-selector' ng-click="toggleViewMode()">
+        <div class='view-mode-selector' ng-show="mode !== 'none'" ng-click="toggleViewMode()">
             <div ng-class="{'view-mode-selected': viewMode == 'edit'}">Edit</div>
             <div ng-class="{'view-mode-selected': viewMode == 'analyze'}">Analyze</div>
         </div>
@@ -343,7 +359,7 @@
         </div>
 
         <div id="selected-row-details-edit" ng-show="selectedRowIndex !== null && viewMode == 'edit'">
-            <label for="continue-distance" title="Useful for hairpins: how close a user must be to this point before the next note can be played.">Continue Distance:</label>
+            <label for="continue-distance" class="hover-hint" data-hover="Useful for hairpins: how close a user must be to this point before the next note can be played.">Continue Distance:</label>
             <input type="number" id="continue-distance" ng-model="pacenotes_data[selectedRowIndex].continueDistance" ng-model-options="{ updateOn: 'blur keydown', debounce: {'blur': 0, 'keydown': 500} }">
             <button id="clear-continue-distance" ng-click="deleteContinueDistance()" ng-disabled="pacenotes_data[selectedRowIndex].continueDistance === undefined">X</button>
 
