@@ -791,6 +791,15 @@ local function savePacenoteData()
     end
 end
 
+local function resetAnalysis()
+    if M.rallyId == nil then return end
+
+    for _, pacenote in ipairs(M.pacenotes_data) do
+        pacenote.analysis = nil
+    end
+    M.guiSendPacenoteData()
+end
+
 -- server functions
 
 local function connectToMicServer()
@@ -1031,6 +1040,7 @@ M.deletePacenote = deletePacenote
 M.deleteDisabledPacenotes = deleteDisabledPacenotes
 M.sortPacenotes = sortPacenotes
 M.savePacenoteData = savePacenoteData
+M.resetAnalysis = resetAnalysis
 M.onScenarioChange = onScenarioChange
 M.connectToMicServer = connectToMicServer
 M.disconnectFromMicServer = disconnectFromMicServer

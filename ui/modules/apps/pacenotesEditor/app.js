@@ -183,6 +183,10 @@ angular.module('beamng.apps')
         scope.selectRow(closestIndex, false);
       }
 
+      scope.resetAnalysis = function () {
+        bngApi.engineLua('extensions.scripts_sopo__pacenotes_extension.resetAnalysis()');
+      }
+
       // Watched variables
       scope.$watch('panelOpen', function(newVal, oldVal) {
         if (newVal !== oldVal) {

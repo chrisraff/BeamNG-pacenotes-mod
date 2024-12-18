@@ -322,14 +322,19 @@
                 </div>
             </div>
 
-            <input type="checkbox" id="follow-note" ng-model="followNote">
-            <label for="follow-note">Follow Current Note</label>
-            |
-            <input type="checkbox" id="record-at-note" ng-model="recordAtNote">
-            <label for="record-at-note">Record at selected</label>
-            |
-            <input type="checkbox" id="is-analyzing" ng-model="isAnalyzing">
-            <label for="is-analyzing">Analyze</label>
+            <div style="overflow-x: auto; white-space: nowrap; margin: 2px;">
+                <input type="checkbox" id="follow-note" ng-model="followNote">
+                <label for="follow-note">Follow Current Note</label>
+                |
+                <span ng-show="viewMode == 'edit'">
+                    <input type="checkbox" id="record-at-note" ng-model="recordAtNote">
+                    <label for="record-at-note">Record at selected</label>
+                </span>
+                <span ng-show="viewMode == 'analyze'">
+                    <input type="checkbox" id="is-analyzing" ng-model="isAnalyzing">
+                    <label for="is-analyzing">Analyze <button ng-click="resetAnalysis()">🔁</button></label>
+                </span>
+            </div>
         </div>
 
         <div id="selected-row-details-edit" ng-show="selectedRowIndex !== null && viewMode == 'edit'">
