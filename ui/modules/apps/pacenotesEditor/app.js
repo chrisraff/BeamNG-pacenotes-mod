@@ -255,36 +255,44 @@ angular.module('beamng.apps')
         }
       });
 
-      scope.$watch('pacenotes_data', function(newVal) {
-        if (newVal && watchEnabled && scope.selectedRowIndex !== null) {
-          // assume that only the current row is being edited
-          let pacenote = newVal[scope.selectedRowIndex];
+      scope.$watch('pacenotes_data', function(newVal, oldVal) {
 
-          if (pacenote === undefined)
-            return;
+        if (!newVal)
+          return;
+        if (!watchEnabled)
+          return;
+        if (scope.selectedRowIndex === null)
+          return;
 
-          // only update the appropriate values
-          bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.pacenotes_data[${scope.selectedRowIndex+1}].d = ${pacenote.d}`);
-          if (pacenote.name == '' || pacenote.name === undefined)
-          {
-            bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.pacenotes_data[${scope.selectedRowIndex+1}].name = nil`);
-          }
-          else
-          {
-            bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.pacenotes_data[${scope.selectedRowIndex+1}].name = "${pacenote.name}"`);
-          }
+        // assume that only the current row is being edited
+        let pacenote = newVal[scope.selectedRowIndex];
 
-          if (pacenote.continueDistance !== undefined)
-            bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.pacenotes_data[${scope.selectedRowIndex+1}].continueDistance = ${pacenote.continueDistance}`);
-          else
-            bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.pacenotes_data[${scope.selectedRowIndex+1}].continueDistance = nil`);
+        if (pacenote === undefined)
+          return;
 
-          scope.handleDelete(scope.selectedRowIndex);
-
-          bngApi.engineLua('extensions.scripts_sopo__pacenotes_extension.sortPacenotes()');
-
-          scope.setRallyChanged(true);
+        // only update the appropriate values
+        if (pacenote.name == '' || pacenote.name === undefined)
+        {
+          bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.pacenotes_data[${scope.selectedRowIndex+1}].name = nil`);
         }
+        else
+        {
+          bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.pacenotes_data[${scope.selectedRowIndex+1}].name = "${pacenote.name}"`);
+        }
+
+        if (pacenote.continueDistance !== undefined)
+          bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.pacenotes_data[${scope.selectedRowIndex+1}].continueDistance = ${pacenote.continueDistance}`);
+        else
+          bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.pacenotes_data[${scope.selectedRowIndex+1}].continueDistance = nil`);
+
+        scope.handleDelete(scope.selectedRowIndex);
+        if (oldVal && pacenote.d !== oldVal[scope.selectedRowIndex].d)
+        {
+          bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.pacenotes_data[${scope.selectedRowIndex+1}].d = ${pacenote.d}`);
+          bngApi.engineLua('extensions.scripts_sopo__pacenotes_extension.sortPacenotes()');
+        }
+
+        scope.setRallyChanged(true);
       }, true); // deep watch: true
 
       scope.selectRow = function (index, playSound = true) {
@@ -396,11 +404,13 @@ angular.module('beamng.apps')
 
       scope.$on('PacenoteDataUpdate', function(event, args) {
         watchEnabled = false;
+
         scope.recordAtNote = args.recordAtNote;
         scope.isAnalyzing = args.isAnalyzing;
         scope.pacenotes_data = args.pacenotes_data;
         if (scope.pacenotes_data !== undefined && scope.selectedRowIndex == scope.pacenotes_data.length - 1)
           scope.selectRow(scope.selectedRowIndex, false);
+
         watchEnabled = true;
       });
 

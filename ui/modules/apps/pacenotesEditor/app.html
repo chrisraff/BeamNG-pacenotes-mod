@@ -322,7 +322,7 @@
                     <tbody>
                         <tr class="pacenote-data-representation" data-index="{{$index}}" ng-repeat="pacenote in pacenotes_data" ng-click="selectRow($index)" ng-class="{'selected-row': $index === selectedRowIndex, 'disabled-row': pacenotes_data[$index].disabled}" ng-model-options="{ debounce: 100 }">
                             <td>
-                                <input type="text" ng-model="pacenotes_data[$index].name" ng-model-options="{ updateOn: 'blur keydown', debounce: {'blur': 0, 'keydown': 500} }" placeholder="{{pacenotes_data[$index].wave_name }}" ng-focus="selectRow($index)">
+                                <input type="text" ng-model="pacenotes_data[$index].name" ng-model-options="{ updateOn: 'blur keydown', debounce: {'blur': 0, 'keydown': 500} }" placeholder="{{pacenotes_data[$index].wave_name }}" ng-focus="selectRow($index)" ng-keydown="$event.stopPropagation();">
                             </td>
                             <td class="distance">
                                 <input type="number" ng-model="pacenotes_data[$index].d" ng-model-options="{ updateOn: 'blur keydown', debounce: {'blur': 0, 'keydown': 500} }" ng-focus="selectRow($index)">
