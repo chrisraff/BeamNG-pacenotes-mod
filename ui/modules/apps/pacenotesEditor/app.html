@@ -366,54 +366,56 @@
             </div>
         </div>
 
-        <div id="selected-row-details-edit" ng-show="selectedRowIndex !== null && viewMode == 'edit'">
-            <label for="continue-distance">Continue Distance:</label>
-            <input type="number" id="continue-distance" ng-model="pacenotes_data[selectedRowIndex].continueDistance" ng-model-options="{ updateOn: 'blur keydown', debounce: {'blur': 0, 'keydown': 500} }">
-            <button id="clear-continue-distance" ng-click="deleteContinueDistance()" ng-disabled="pacenotes_data[selectedRowIndex].continueDistance === undefined">X</button>
-        </div>
-
-        <div id="selected-row-details-analyze" ng-show="selectedRowIndex !== null && viewMode == 'analyze'">
-            <table style="table-layout: fixed; width: 100%;">
-                <colgroup>
-                    <col style="width: 40%;">
-                    <col style="width: 30%;">
-                    <col style="width: 20%;">
-                </colgroup>
-                <tr>
-                    <td>Speed Queued:</td>
-                    <td class="analysis-number">{{pacenotes_data[selectedRowIndex].analysis && pacenotes_data[selectedRowIndex].analysis.queueSpeed}}</td>
-                    <td style="width: 3em;">km/h</td>
-                </tr>
-                <tr>
-                    <td>Distance Queued:</td>
-                    <td class="analysis-number">{{pacenotes_data[selectedRowIndex].analysis && (pacenotes_data[selectedRowIndex].d - pacenotes_data[selectedRowIndex].analysis.queueDistance).toFixed(3)}}</td>
-                    <td style="width: 3em;">m</td>
-                </tr>
-                <tr>
-                    <td>Distance Play Started:</td>
-                    <td class="analysis-number">{{pacenotes_data[selectedRowIndex].analysis && (pacenotes_data[selectedRowIndex].d - pacenotes_data[selectedRowIndex].analysis.playStartDistance).toFixed(3)}}</td>
-                    <td style="width: 3em;">m</td>
-                </tr>
-                <tr>
-                    <td>Distance Play Ended:</td>
-                    <td class="analysis-number">{{pacenotes_data[selectedRowIndex].analysis && (pacenotes_data[selectedRowIndex].d - pacenotes_data[selectedRowIndex].analysis.playEndDistance).toFixed(3)}}</td>
-                    <td style="width: 3em;">m</td>
-                </tr>
-                <tr>
-                    <td>Playback Time:</td>
-                    <td class="analysis-number">{{pacenotes_data[selectedRowIndex].analysis && pacenotes_data[selectedRowIndex].analysis.playbackTime}}</td>
-                    <td style="width: 3em;">s</td>
-                </tr>
-            </table>
-        </div>
-
         <div ng-show="mode !== 'none'">
-            Distance: <span id="distance">{{distance.toFixed(2)}}</span>
-            <button ng-click="jumpToDistance()">Jump To</button>
+            <div id="selected-row-details-edit" ng-show="selectedRowIndex !== null && viewMode == 'edit'">
+                <label for="continue-distance">Continue Distance:</label>
+                <input type="number" id="continue-distance" ng-model="pacenotes_data[selectedRowIndex].continueDistance" ng-model-options="{ updateOn: 'blur keydown', debounce: {'blur': 0, 'keydown': 500} }">
+                <button id="clear-continue-distance" ng-click="deleteContinueDistance()" ng-disabled="pacenotes_data[selectedRowIndex].continueDistance === undefined">X</button>
+            </div>
 
-            <button ng-click="saveRally()" ng-disabled="!isRallyChanged" ng-show="mode === 'rally'">Save Pacenotes</button>
-            <button id="recce-save" ng-click="setSaveRecce()" ng-show="mode === 'recce'">Save Recce</button>
-            <button id="recce-finalize" ng-click="recceFinalize()" ng-show="mode === 'recce'">Finalize Track</button>
+            <div id="selected-row-details-analyze" ng-show="selectedRowIndex !== null && viewMode == 'analyze'">
+                <table style="table-layout: fixed; width: 100%;">
+                    <colgroup>
+                        <col style="width: 40%;">
+                        <col style="width: 30%;">
+                        <col style="width: 20%;">
+                    </colgroup>
+                    <tr>
+                        <td>Speed Queued:</td>
+                        <td class="analysis-number">{{pacenotes_data[selectedRowIndex].analysis && pacenotes_data[selectedRowIndex].analysis.queueSpeed}}</td>
+                        <td style="width: 3em;">km/h</td>
+                    </tr>
+                    <tr>
+                        <td>Distance Queued:</td>
+                        <td class="analysis-number">{{pacenotes_data[selectedRowIndex].analysis && (pacenotes_data[selectedRowIndex].d - pacenotes_data[selectedRowIndex].analysis.queueDistance).toFixed(3)}}</td>
+                        <td style="width: 3em;">m</td>
+                    </tr>
+                    <tr>
+                        <td>Distance Play Started:</td>
+                        <td class="analysis-number">{{pacenotes_data[selectedRowIndex].analysis && (pacenotes_data[selectedRowIndex].d - pacenotes_data[selectedRowIndex].analysis.playStartDistance).toFixed(3)}}</td>
+                        <td style="width: 3em;">m</td>
+                    </tr>
+                    <tr>
+                        <td>Distance Play Ended:</td>
+                        <td class="analysis-number">{{pacenotes_data[selectedRowIndex].analysis && (pacenotes_data[selectedRowIndex].d - pacenotes_data[selectedRowIndex].analysis.playEndDistance).toFixed(3)}}</td>
+                        <td style="width: 3em;">m</td>
+                    </tr>
+                    <tr>
+                        <td>Playback Time:</td>
+                        <td class="analysis-number">{{pacenotes_data[selectedRowIndex].analysis && pacenotes_data[selectedRowIndex].analysis.playbackTime}}</td>
+                        <td style="width: 3em;">s</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div>
+                Distance: <span id="distance">{{distance.toFixed(2)}}</span>
+                <button ng-click="jumpToDistance()">Jump To</button>
+
+                <button ng-click="saveRally()" ng-disabled="!isRallyChanged" ng-show="mode === 'rally'">Save Pacenotes</button>
+                <button id="recce-save" ng-click="setSaveRecce()" ng-show="mode === 'recce'">Save Recce</button>
+                <button id="recce-finalize" ng-click="recceFinalize()" ng-show="mode === 'recce'">Finalize Track</button>
+            </div>
         </div>
 
     </details>
