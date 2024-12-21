@@ -339,6 +339,8 @@ local function deleteRally()
 end
 
 local function cleanup()
+    if M.rallyId == nil then return end
+
     log('I', M.logTag, 'rally / recce: cleanup called')
 
     if M.savingRecce then
@@ -815,7 +817,7 @@ local function connectToMicServer()
     if not result then
         M.micServer = nil
         log('I', M.logTag, 'couldn\'t connect to server')
-        guihooks.trigger('toastrMsg', {type = "warning", title = "Coudln't Connect", msg = "Check that the mic server is running.", config = {timeOut = 7000}})
+        guihooks.trigger('toastrMsg', {type = "warning", title = "Couldn't Connect", msg = "Check that the mic server is running.", config = {timeOut = 7000}})
         M.guiSendMicData()
         return
     end
