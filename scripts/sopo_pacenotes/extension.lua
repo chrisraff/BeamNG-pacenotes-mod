@@ -754,10 +754,34 @@ end
 local function deleteDisabledPacenotes()
     for i = #M.pacenotes_data, 1, -1 do
         if M.pacenotes_data[i].disabled then
+            -- delete the file
+            local path = 'pacenotes_sp/' .. M.levelId .. '/' .. M.rallyId .. '/pacenotes/' .. M.pacenotes_data[i].wave_name
+            if FS:fileExists(path) then
+                FS:removeFile(path)
+                log('I', M.logTag, 'deleting pacenote file: ' .. path)
+            end
+
+            -- delete the pacenote
             table.remove(M.pacenotes_data, i)
         end
     end
     M.guiSendPacenoteData()
+end
+
+local function deleteUnusedSounds()
+    local files = FS:findFiles('pacenotes_sp/' .. M.levelId .. '/' .. M.rallyId .. '/pacenotes', '*.*', -1, true, false)
+    local usedFiles = {}
+    for _, pacenote in ipairs(M.pacenotes_data) do
+        table.insert(usedFiles, pacenote.wave_name)
+    end
+
+    for _, file in ipairs(files) do
+        local filename = file:match(".+/(.+)$")
+        if not tableContains(usedFiles, filename) then
+            FS:removeFile(file)
+            log('I', M.logTag, 'deleting unused sound: ' .. filename)
+        end
+    end
 end
 
 local function sortPacenotes()
@@ -1040,6 +1064,7 @@ M.onClientPostStartMission = onClientPostStartMission
 M.onUpdate = onUpdate
 M.deletePacenote = deletePacenote
 M.deleteDisabledPacenotes = deleteDisabledPacenotes
+M.deleteUnusedSounds = deleteUnusedSounds
 M.sortPacenotes = sortPacenotes
 M.savePacenoteData = savePacenoteData
 M.resetAnalysis = resetAnalysis
