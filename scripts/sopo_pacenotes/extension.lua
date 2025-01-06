@@ -850,7 +850,6 @@ local function connectToMicServer()
     M.guiSendMicData()
 
     M.serverUpdateDataPath()
-    M.micServer:send('\n')
 
     if M.rallyId ~= nil then
         M.serverUpdateMission()
@@ -873,13 +872,13 @@ end
 
 local function serverUpdateDataPath()
     if M.micServer ~= nil then
-        M.micServer:send('data_path ' .. FS:getFileRealPath('/pacenotes_sp'))
+        M.micServer:send('data_path ' .. FS:getFileRealPath('/pacenotes_sp') .. '\n')
     end
 end
 
 local function serverUpdateMission()
     if M.micServer ~= nil then
-        M.micServer:send('mission ' .. M.levelId .. '/' .. M.rallyId)
+        M.micServer:send('mission ' .. M.levelId .. '/' .. M.rallyId .. '\n')
 
         -- in case we are recording more pacenotes, set the index
         if M.mode == "rally" or M.mode == "recce" then
@@ -893,7 +892,6 @@ local function serverUpdateMission()
                 end
             end
 
-            M.micServer:send('\n')
             M.serverResetCount(maxNumber + 1)
         end
     end
@@ -901,20 +899,20 @@ end
 
 local function serverCloseMission()
     if M.micServer ~= nil then
-        M.micServer:send('mission_end')
+        M.micServer:send('mission_end\n')
     end
 end
 
 local function serverDeleteLastPacenote()
     if M.micServer ~= nil then
-        M.micServer:send('delete_last_pacenote')
+        M.micServer:send('delete_last_pacenote\n')
     end
 end
 
 local function serverResetCount(i)
     if M.micServer ~= nil then
         i = i or 0
-        M.micServer:send('reset_count ' .. i)
+        M.micServer:send('reset_count ' .. i .. '\n')
         M.recordingIndex = i
     end
 end
@@ -939,7 +937,7 @@ local function handleStartRecording()
     end
 
     if M.mode == "rally" or M.mode == "recce" then
-        M.micServer:send('record_start')
+        M.micServer:send('record_start\n')
 
         if not M.recordAtNote then
             M.recordingDistance = M.last_distance
@@ -966,7 +964,7 @@ local function handleStopRecording()
         return
     end
 
-    M.micServer:send('record_stop')
+    M.micServer:send('record_stop\n')
 
     M.isRecording = false
     M.guiSendMicData()
