@@ -226,11 +226,12 @@ local function initRecce()
     M.guiSendMissionData()
 end
 
-local function loadOrNewRally()
-    local result = M.loadRally(M.rallyId)
+local function loadOrNewRally(rallyId)
+    rallyId = rallyId or M.rallyId
+    local result = M.loadRally(rallyId)
 
     if not result then
-        M.newRally(M.rallyId)
+        M.newRally(rallyId)
     end
 end
 
@@ -1051,6 +1052,7 @@ end
 
 M.loadRally = loadRally
 M.newRally = newRally
+M.loadOrNewRally = loadOrNewRally
 M.copyRally = copyRally
 M.deleteRally = deleteRally
 M.cleanup = cleanup
