@@ -1,3 +1,9 @@
 {
-	"rally_start_recording":	{ "title":"Record Rally Pacenote", "desc":"Push to talk when recording a pace note", "order": 300, "cat":"general", "ctx": "tlua", "onDown":"scripts_sopo__pacenotes_extension.handleStartRecording()", "onUp":"scripts_sopo__pacenotes_extension.handleStopRecording()" }
+	"rally_start_recording":	{ "title":"Record Rally Pacenote", "desc":"Push to talk when recording a pace note", "order": 300, "cat":"general", "ctx": "tlua", "onDown":"scripts_sopo__pacenotes_extension.handleStartRecording()", "onUp":"scripts_sopo__pacenotes_extension.handleStopRecording()" },
+	"rally_volume_up": { "title":"Rally Volume Up", "desc":"Increase volume of pace notes", "order": 300.1, "cat":"general", "ctx": "tlua", "onDown":"scripts_sopo__pacenotes_extension.handleVolumeChange(2)" },
+	"rally_volume_down": { "title":"Rally Volume Up", "desc":"Increase volume of pace notes", "order": 300.2, "cat":"general", "ctx": "tlua", "onDown":"scripts_sopo__pacenotes_extension.handleVolumeChange(-2)" },
+	"rally_earlier": { "title":"Pacenotes Earlier", "desc":"Hear the pacenotes earlier", "order": 300.3, "cat":"general", "ctx": "tlua", "onDown":"scripts_sopo__pacenotes_extension.handlePacenoteTimingChange(-5)" },
+	"rally_later": { "title":"Pacenotes Later", "desc":"Hear the pacenotes later", "order": 300.4, "cat":"general", "ctx": "tlua", "onDown":"scripts_sopo__pacenotes_extension.handlePacenoteTimingChange(5)" },
+	"rally_speed_sensitivity_up": { "title":"Speed Sensitivity Up", "desc":"As you drive faster, make pacenotes earlier", "order": 300.5, "cat":"general", "ctx": "tlua", "onDown":"scripts_sopo__pacenotes_extension.handlePacenoteCarSpeedChange(0.1)" },
+	"rally_speed_sensitivity_down": { "title":"Speed Sensitivity Down", "desc":"As you drive faster, make pacenotes less early", "order": 300.6, "cat":"general", "ctx": "tlua", "onDown":"scripts_sopo__pacenotes_extension.handlePacenoteCarSpeedChange(-0.1)" }
 }

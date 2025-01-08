@@ -14,7 +14,7 @@ M.uiState = "none"
 M.settings = {
     settingsVersion = 1,
     sound_data = {
-        volume = 10
+        volume = 20
     },
     reset_threshold = 10, -- if you move this much since last tick, reset
     off_course_playback_reset_dist = 30, -- if you drive off course this much, reset playback
@@ -28,7 +28,7 @@ M.settings = {
 M.guiConfig = {
     panelOpen = true,
     isRallyChanged = false,
-    playbackVolume = 10
+    playbackVolume = 20
 }
 
 M.tempPlaybackVolumeMultiplier = 1
@@ -471,10 +471,13 @@ local function onUiChangedState(curUIState, prevUIState)
     log('I', M.logTag, 'ui changed state: ' .. curUIState .. ', ' .. prevUIState)
     M.uiState = curUIState
 
-    -- save the settings
-    jsonWriteFile('settings/sopo_pacenotes/settings.json', M.settings)
+    M.saveSettings()
 
     M.guiSendGuiData()
+end
+
+local function saveSettings()
+    jsonWriteFile('settings/sopo_pacenotes/settings.json', M.settings)
 end
 
 local function onClientPostStartMission(levelPath)
@@ -918,6 +921,8 @@ local function serverResetCount(i)
     end
 end
 
+-- keybind functions
+
 local function handleStartRecording()
     log('I', M.logTag, 'start rec')
 
@@ -1001,6 +1006,24 @@ local function handleStopRecording()
     end
 end
 
+local handleVolumeChange = function(diff)
+    M.settings.sound_data.volume = math.min(100, math.max(0, M.settings.sound_data.volume + diff))
+    M.guiSendGuiData()
+    M.saveSettings()
+end
+
+local handlePacenoteTimingChange = function(diff)
+    M.settings.pacenote_playback.lookahead_distance_base = math.min(1000, math.max(0, M.settings.pacenote_playback.lookahead_distance_base + diff))
+    M.guiSendMissionData()
+    M.saveSettings()
+end
+
+local handlePacenoteCarSpeedChange = function(diff)
+    M.settings.pacenote_playback.speed_multiplier = math.min(10, math.max(0, M.settings.pacenote_playback.speed_multiplier + diff))
+    M.guiSendMissionData()
+    M.saveSettings()
+end
+
 -- gui functions
 
 local function guiSendMissionData()
@@ -1060,6 +1083,7 @@ M.onExtensionLoaded = onExtensionLoaded
 M.switchRallyFromRecce = switchRallyFromRecce
 M.onAnyMissionChanged = onAnyMissionChanged
 M.onUiChangedState = onUiChangedState
+M.saveSettings = saveSettings
 M.onClientPostStartMission = onClientPostStartMission
 M.onUpdate = onUpdate
 M.deletePacenote = deletePacenote
@@ -1078,6 +1102,9 @@ M.serverDeleteLastPacenote = serverDeleteLastPacenote
 M.serverResetCount = serverResetCount
 M.handleStartRecording = handleStartRecording
 M.handleStopRecording = handleStopRecording
+M.handleVolumeChange = handleVolumeChange
+M.handlePacenoteTimingChange = handlePacenoteTimingChange
+M.handlePacenoteCarSpeedChange = handlePacenoteCarSpeedChange
 M.guiSendMissionData = guiSendMissionData
 M.guiSendGuiData = guiSendGuiData
 M.guiSendMicData = guiSendMicData
