@@ -1035,6 +1035,11 @@ local handlePacenoteCarSpeedChange = function(diff)
     M.saveSettings()
 end
 
+local handlePanelToggle = function()
+    M.settings.guiPanelStates['main-panel'] = not M.settings.guiPanelStates['main-panel']
+    M.guiSendGuiData()
+end
+
 -- gui functions
 
 local function guiSendMissionData()
@@ -1117,6 +1122,7 @@ M.handleStopRecording = handleStopRecording
 M.handleVolumeChange = handleVolumeChange
 M.handlePacenoteTimingChange = handlePacenoteTimingChange
 M.handlePacenoteCarSpeedChange = handlePacenoteCarSpeedChange
+M.handlePanelToggle = handlePanelToggle
 M.guiSendMissionData = guiSendMissionData
 M.guiSendGuiData = guiSendGuiData
 M.guiSendMicData = guiSendMicData
