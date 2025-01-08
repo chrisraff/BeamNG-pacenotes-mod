@@ -22,13 +22,20 @@ M.settings = {
         lookahead_distance_base = 60,
         speed_multiplier = 3
     },
+    guiPanelStates = {
+        ["main-panel"] = true,
+        ["load-save-panel"] = false,
+        ["delete-panel"] = false,
+        ["playback-panel"] = true,
+        ["mic-server-panel"] = false
+    },
     rallyPaths = {}
 }
 
 M.guiConfig = {
-    panelOpen = true,
     isRallyChanged = false,
-    playbackVolume = 20
+    playbackVolume = 20,
+    guiPanelStates = {}
 }
 
 M.tempPlaybackVolumeMultiplier = 1
@@ -121,9 +128,13 @@ local function onExtensionLoaded()
     -- load the settings
     local settingsFile = jsonReadFile('settings/sopo_pacenotes/settings.json')
     if settingsFile and settingsFile.settingsVersion == M.settings.settingsVersion then
+        if not settingsFile.guiPanelStates then
+            log('I', M.logTag, 'populating guiPanelStates from default')
+            settingsFile.guiPanelStates = M.settings.guiPanelStates
+        end
         M.settings = settingsFile
-        M.guiSendGuiData()
     end
+    M.guiSendGuiData()
 end
 
 local function computeDistSquared(x1, y1, z1, x2, y2, z2)
@@ -1047,6 +1058,7 @@ end
 
 local function guiSendGuiData()
     M.guiConfig.playbackVolume = M.settings.sound_data.volume
+    M.guiConfig.guiPanelStates = M.settings.guiPanelStates
     guihooks.trigger('GuiDataUpdate', M.guiConfig)
 end
 

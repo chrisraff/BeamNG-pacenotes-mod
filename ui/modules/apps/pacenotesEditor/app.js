@@ -45,7 +45,7 @@ angular.module('beamng.apps')
     restrict: 'EA',
     link: function (scope, element, attrs) {
 
-      scope.panelOpen = true;
+      scope.panelStates = {};
       scope.pacenotes_data = [];
       scope.level = '';
       scope.rallyId = '';
@@ -203,17 +203,6 @@ angular.module('beamng.apps')
       }
 
       // Watched variables
-      scope.$watch('panelOpen', function(newVal, oldVal) {
-        if (newVal !== oldVal) {
-          bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.guiConfig.panelOpen = ${newVal}`);
-
-          // if the panel just opened, jump to the selected row
-          if (newVal) {
-            scope.selectRow(scope.selectedRowIndex, false);
-          }
-        }
-      })
-
       scope.$watch('playbackLookahead', function(newVal, oldVal) {
         if (newVal !== oldVal) {
           bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.settings.pacenote_playback.lookahead_distance_base = ${newVal}`);
@@ -385,9 +374,23 @@ angular.module('beamng.apps')
 
       scope.$on('GuiDataUpdate', function(event, args) {
         watchEnabled = false;
-        scope.panelOpen = args.panelOpen;
+
+        scope.panelStates = args.guiPanelStates;
         scope.isRallyChanged = args.isRallyChanged;
         scope.playbackVolume = args.playbackVolume;
+
+        // apply guiPanelStates
+        for (const panel in scope.panelStates) {
+          const panelElement = document.querySelector(`#${panel}`);
+          if (panelElement) {
+            if (scope.panelStates[panel]) {
+              panelElement.setAttribute('open', '');
+            } else {
+              panelElement.removeAttribute('open');
+            }
+          }
+        }
+
         watchEnabled = true;
       });
 
@@ -426,8 +429,16 @@ angular.module('beamng.apps')
       element.ready(function () {
         bngApi.engineLua('extensions.scripts_sopo__pacenotes_extension.guiInit()');
 
-        document.querySelector('#main-panel').addEventListener('toggle', (event) => {
-          scope.panelOpen = event.target.hasAttribute('open');
+        document.querySelectorAll('details[id]').forEach(panel => {
+              panel.addEventListener('toggle', (event) => {
+              scope.panelStates[panel.id] = event.target.hasAttribute('open');
+              bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.settings.guiPanelStates['${panel.id}'] = ${scope.panelStates[panel.id]}`);
+
+              // if the main panel was opened, jump to the selected row
+              if (panel.id === 'main-panel' && event.target.hasAttribute('open') && scope.selectedRowIndex !== null) {
+                scope.selectRow(scope.selectedRowIndex, false);
+              }
+            });
         });
       });
     }

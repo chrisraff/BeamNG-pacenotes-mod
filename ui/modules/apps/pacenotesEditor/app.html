@@ -268,7 +268,7 @@
                 ng-model="closeIgnoreUnsavedRallyChanges"/>
             <label id="close-changed-rally-box-label" ng-show="showCloseCheckbox" for="close-changed-rally-box">Ignore unsaved changes</label>
 
-            <details>
+            <details id="delete-panel">
                 <summary>Delete</summary>
 
                 <p>THIS CANNOT BE UNDONE. Type 'Delete' into the text box and press the button to delete the pacenotes for this stage.</p>
@@ -278,7 +278,7 @@
             </details>
         </details>
 
-        <details>
+        <details id="playback-panel">
             <summary>Playback tuning</summary>
             <p>
                 <span class="hover-hint" data-hover="Start playing a pacenote X meters ahead.">Lookahead Distance:</span>
