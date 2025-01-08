@@ -288,10 +288,11 @@
                 <span class="hover-hint" data-hover="Adds additonal lookahead distance based on car speed.">Car Speed Multiplier:</span>
                 <input type="number" id="speed-multiplier" ng-model="speedMultiplier">
             </p>
-            <p>
-                Volume:
-                <input type="number" id="speed-multiplier" ng-model="playbackVolume">
-            </p>
+                <p style="display: flex; align-items: center; justify-content: flex-start; gap: 15px;">
+                    Volume:
+                    <input type="range" id="playback-volume" ng-model="playbackVolume" min="0" max="100" style="width: 50; margin-left: 15px; margin-right: 15px;">
+                    {{playbackVolume}}
+                </p>
         </details>
 
         <details id="mic-server-panel" open>
