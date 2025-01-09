@@ -29,6 +29,7 @@ M.settings = {
         ["playback-panel"] = true,
         ["mic-server-panel"] = false
     },
+    guiTableHeight = 300,
     rallyPaths = {}
 }
 
@@ -128,9 +129,11 @@ local function onExtensionLoaded()
     -- load the settings
     local settingsFile = jsonReadFile('settings/sopo_pacenotes/settings.json')
     if settingsFile and settingsFile.settingsVersion == M.settings.settingsVersion then
-        if not settingsFile.guiPanelStates then
-            log('I', M.logTag, 'populating guiPanelStates from default')
-            settingsFile.guiPanelStates = M.settings.guiPanelStates
+        for key, value in pairs(M.settings) do
+            if settingsFile[key] == nil then
+                log('I', M.logTag, 'populating ' .. key .. ' from default')
+                settingsFile[key] = value
+            end
         end
         M.settings = settingsFile
     end
@@ -1064,6 +1067,7 @@ end
 local function guiSendGuiData()
     M.guiConfig.playbackVolume = M.settings.sound_data.volume
     M.guiConfig.guiPanelStates = M.settings.guiPanelStates
+    M.guiConfig.guiTableHeight = M.settings.guiTableHeight
     guihooks.trigger('GuiDataUpdate', M.guiConfig)
 end
 

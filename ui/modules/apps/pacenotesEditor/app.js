@@ -65,6 +65,24 @@ angular.module('beamng.apps')
       scope.selectedRowIndex = null;
       scope.isRallyChanged = false;
 
+      // track table size
+      const resizeObserver = new ResizeObserver(entries => {
+        // don't update if the panel is collapsed
+        if (!document.querySelector('#main-panel').hasAttribute('open')) {
+          return;
+        }
+        for (let entry of entries) {
+          const height = entry.contentRect.height;
+
+          // during UI transitions, height can be set to 0 - ignore it
+          if (height == 0)
+            continue;
+
+          bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.settings.guiTableHeight = ${height}`);
+        }
+      });
+      resizeObserver.observe(document.querySelector('#pacenotes-list'));
+
       let watchEnabled = true;
 
       scope.toggleMicServerConnection = function () {
@@ -395,6 +413,8 @@ angular.module('beamng.apps')
           }
         }
 
+        document.querySelector('#pacenotes-list').style.height = args.guiTableHeight + 'px';
+
         watchEnabled = true;
       });
 
@@ -428,6 +448,11 @@ angular.module('beamng.apps')
         if (scope.pacenotes_data.length > args.index) {
           scope.selectRow(args.index, false);
         }
+      });
+
+      // Cleanup on destroy
+      scope.$on('$destroy', () => {
+        resizeObserver.disconnect();
       });
 
       element.ready(function () {
