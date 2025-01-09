@@ -305,7 +305,7 @@
             </button>
         </details>
 
-        <div class='view-mode-selector' ng-show="mode !== 'none'" ng-click="toggleViewMode()">
+        <div class='view-mode-selector' ng-show="mode == 'rally'" ng-click="toggleViewMode()">
             <div ng-class="{'view-mode-selected': viewMode == 'edit'}">Edit</div>
             <div ng-class="{'view-mode-selected': viewMode == 'analyze'}">Analyze</div>
         </div>

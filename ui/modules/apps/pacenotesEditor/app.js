@@ -365,6 +365,10 @@ angular.module('beamng.apps')
         SharedDataService.rallyPaths = args.rallyPaths;
         scope.mode = args.mode;
 
+        if (scope.mode === 'recce' && scope.viewMode === 'analyze') {
+          scope.toggleViewMode();
+        }
+
         document.querySelector('#playback-lookahead').value = args.playback_lookahead;
         document.querySelector('#speed-multiplier').value = args.speed_multiplier;
 
