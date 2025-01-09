@@ -6,5 +6,6 @@
 	"rally_later": { "title":"Pacenotes Later", "desc":"Hear the pacenotes later", "order": 300.4, "cat":"general", "ctx": "tlua", "onDown":"scripts_sopo__pacenotes_extension.handlePacenoteTimingChange(5)" },
 	"rally_speed_sensitivity_up": { "title":"Speed Sensitivity Up", "desc":"As you drive faster, make pacenotes earlier", "order": 300.5, "cat":"general", "ctx": "tlua", "onDown":"scripts_sopo__pacenotes_extension.handlePacenoteCarSpeedChange(0.1)" },
 	"rally_speed_sensitivity_down": { "title":"Speed Sensitivity Down", "desc":"As you drive faster, make pacenotes less early", "order": 300.6, "cat":"general", "ctx": "tlua", "onDown":"scripts_sopo__pacenotes_extension.handlePacenoteCarSpeedChange(-0.1)" },
-	"rally_toggle_main_panel": { "title":"Toggle Pacenotes Editor", "desc":"Show / hide the pacenotes editor app panel", "order": 300.7, "cat":"general", "ctx": "tlua", "onDown":"scripts_sopo__pacenotes_extension.handlePanelToggle()" }
+	"rally_toggle_main_panel": { "title":"Toggle Pacenotes Editor", "desc":"Show / hide the pacenotes editor app panel", "order": 300.7, "cat":"general", "ctx": "tlua", "onDown":"scripts_sopo__pacenotes_extension.handlePanelToggle()" },
+	"rally_server_connect": { "title":"Connect to Rally Mic Server", "desc":"Connect to the mic server", "order": 300.8, "cat":"general", "ctx": "tlua", "onDown":"scripts_sopo__pacenotes_extension.connectToMicServer()" }
 }
