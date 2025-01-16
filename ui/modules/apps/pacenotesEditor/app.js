@@ -293,7 +293,7 @@ angular.module('beamng.apps')
           bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.pacenotes_data[${scope.selectedRowIndex+1}].continueDistance = nil`);
 
         scope.handleDelete(scope.selectedRowIndex);
-        if (oldVal && pacenote.d !== oldVal[scope.selectedRowIndex].d)
+        if (oldVal && oldVal[scope.selectedRowIndex] && pacenote.d !== oldVal[scope.selectedRowIndex].d)
         {
           bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.pacenotes_data[${scope.selectedRowIndex+1}].d = ${pacenote.d}`);
           bngApi.engineLua('extensions.scripts_sopo__pacenotes_extension.sortPacenotes()');
