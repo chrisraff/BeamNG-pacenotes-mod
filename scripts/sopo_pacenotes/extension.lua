@@ -772,14 +772,23 @@ end
 local function deleteDisabledPacenotes()
     for i = #M.pacenotes_data, 1, -1 do
         if M.pacenotes_data[i].disabled then
-            -- delete the file
-            local path = 'pacenotes_sp/' .. M.levelId .. '/' .. M.rallyId .. '/pacenotes/' .. M.pacenotes_data[i].wave_name
-            if FS:fileExists(path) then
-                FS:removeFile(path)
-                log('I', M.logTag, 'deleting pacenote file: ' .. path)
+            -- Strip the extension from wave_name to get the base filename
+            local baseName = M.pacenotes_data[i].wave_name:match("(.+)%.%w+$")
+
+            -- Construct the paths for both .wav and .ogg extensions
+            local wavPath = 'pacenotes_sp/' .. M.levelId .. '/' .. M.rallyId .. '/pacenotes/' .. baseName .. '.wav'
+            local oggPath = 'pacenotes_sp/' .. M.levelId .. '/' .. M.rallyId .. '/pacenotes/' .. baseName .. '.ogg'
+
+            -- Check if either file exists and delete it
+            if FS:fileExists(wavPath) then
+                FS:removeFile(wavPath)
+                log('I', M.logTag, 'Deleting pacenote file: ' .. wavPath)
+            elseif FS:fileExists(oggPath) then
+                FS:removeFile(oggPath)
+                log('I', M.logTag, 'Deleting pacenote file: ' .. oggPath)
             end
 
-            -- delete the pacenote
+            -- Delete the pacenote from the list
             table.remove(M.pacenotes_data, i)
         end
     end
@@ -789,15 +798,22 @@ end
 local function deleteUnusedSounds()
     local files = FS:findFiles('pacenotes_sp/' .. M.levelId .. '/' .. M.rallyId .. '/pacenotes', '*.*', -1, true, false)
     local usedFiles = {}
+
+    -- Collect the names of used files (excluding file extensions)
     for _, pacenote in ipairs(M.pacenotes_data) do
-        table.insert(usedFiles, pacenote.wave_name)
+        local fileBaseName = pacenote.wave_name:match("(.+)%..+$") -- Remove extension
+        table.insert(usedFiles, fileBaseName)
     end
 
     for _, file in ipairs(files) do
         local filename = file:match(".+/(.+)$")
-        if not tableContains(usedFiles, filename) then
-            FS:removeFile(file)
-            log('I', M.logTag, 'deleting unused sound: ' .. filename)
+        local fileBaseName, fileExtension = filename:match("(.+)%.(%w+)$")  -- Get base name and extension
+
+        -- If the file is unused, delete it
+        if not tableContains(usedFiles, fileBaseName) then
+            FS:removeFile('pacenotes_sp/' .. M.levelId .. '/' .. M.rallyId .. '/pacenotes/' .. filename)
+            end
+            log('I', M.logTag, 'Deleting unused sound: ' .. filename)
         end
     end
 end
