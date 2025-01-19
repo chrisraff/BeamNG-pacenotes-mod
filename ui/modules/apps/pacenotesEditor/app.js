@@ -318,15 +318,17 @@ angular.module('beamng.apps')
         if (scope.pacenotes_data.length > index) {
           scope.selectedRowIndex = index;
 
-          // scroll the selected row into view
-          const selectedItem = document.querySelectorAll(`.pacenote-data-representation[data-index="${index}"]`);
-          // for all, scroll into view if visible
-          for (let i = 0; i < selectedItem.length; i++) {
-            const element = selectedItem[i];
-            if (element.offsetParent !== null) {
-              element.scrollIntoViewIfNeeded();
+          // after angular updates, scroll the selected row into view
+          $timeout(() => {
+            const selectedItem = document.querySelectorAll(`.pacenote-data-representation[data-index="${index}"]`);
+            // for all, scroll into view if visible
+            for (let i = 0; i < selectedItem.length; i++) {
+              const element = selectedItem[i];
+              if (element.offsetParent !== null) {
+                element.scrollIntoViewIfNeeded();
+              }
             }
-          }
+          }, 100);
 
           if (playSound && index !== null)
             scope.playSound(scope.pacenotes_data[index].wave_name);
