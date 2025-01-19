@@ -906,7 +906,19 @@ end
 
 local function serverUpdateDataPath()
     if M.micServer ~= nil then
-        M.micServer:send('data_path ' .. FS:getFileRealPath('/pacenotes_sp') .. '\n')
+        -- Get the root path
+        local fullPath = FS:getFileRealPath('/')
+        fullPath = fullPath:gsub('\\', '/')
+        log('I', M.logTag, 'Full path: ' .. fullPath)
+
+        -- Start from the end and backtrack until you find the version folder
+        local trimmedPath = fullPath:match("(.-/%d+%.%d+)/") .. '/pacenotes_sp'
+        if trimmedPath then
+            log('I', M.logTag, 'Trimmed path: ' .. trimmedPath)
+            M.micServer:send('data_path ' .. trimmedPath .. '\n')
+        else
+            log('E', M.logTag, 'Could not find a valid version number in the path!')
+        end
     end
 end
 
