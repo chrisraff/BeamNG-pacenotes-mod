@@ -326,6 +326,8 @@ local function copyRally(newId)
 end
 
 local function deleteRally()
+    if M.rallyId == nil then return end
+
     log('I', M.logTag, 'Deleting rally')
 
     local path = 'pacenotes_sp/' .. M.levelId .. '/'.. M.rallyId
