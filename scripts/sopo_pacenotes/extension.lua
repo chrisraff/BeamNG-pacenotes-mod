@@ -330,7 +330,12 @@ local function deleteRally()
 
     log('I', M.logTag, 'Deleting rally')
 
-    local path = 'pacenotes_sp/' .. M.levelId .. '/'.. M.rallyId
+    local rallyId = M.rallyId
+    local levelId = M.levelId
+
+    M.cleanup()
+
+    local path = 'pacenotes_sp/' .. levelId .. '/'.. rallyId
     if FS:directoryExists(path) and FS:fileExists(path .. '/pacenotes.json') then
         FS:removeFile(path .. '/pacenotes.json')
 
@@ -340,19 +345,6 @@ local function deleteRally()
             FS:removeFile(file)
         end
     end
-
-    M.rallyId = nil
-    M.mode = "none"
-
-    M.checkpoints_array = nil
-    M.pacenotes_data = nil
-
-    M.tempPlaybackVolumeMultiplier = 1
-
-    clearQueue()
-
-    M.serverCloseMission()
-    M.guiSendMissionData()
 end
 
 local function cleanup()
