@@ -8,6 +8,7 @@ local M = {}
 M.scenarioHandle = nil
 M.rallyId = nil
 M.levelId = nil
+M.micId = nil
 M.mode = "none"
 M.uiState = "none"
 
@@ -17,6 +18,8 @@ M.settings = {
         volume = 20
     },
     reset_threshold = 10, -- if you move this much since last tick, reset
+    wrong_way_threshold = 10, -- if you travel this far backwards, play wrong way sound and reset notes
+    wrong_way_repeat_distance = 40, -- if you keep going backwards, you will be warned again at this distance
     off_course_playback_reset_dist = 30, -- if you drive off course this much, reset playback
     pacenote_playback = {
         lookahead_distance_base = 60,
@@ -49,7 +52,10 @@ M.tick = 0
 
 -- Playback variables
 M.last_distance = 0
-M.distance_of_last_queued_note = 0
+M.furthest_distance = 0
+M.backtrack_distance = 0
+M.is_going_forwards = true
+M.distance_of_last_queued_note = -1
 M.last_position = vec3(0, 0, 0)
 
 M.audioQueue = {}
@@ -182,6 +188,29 @@ local function clearQueue()
     end
 end
 
+local function playMicSound(soundName)
+    if M.micId == nil then return end
+    -- Search for all files in the folder
+    local files = FS:findFiles('pacenotes_sp/global/' .. M.micId .. '/' .. soundName, '*.*', -1, true, false)
+    local soundPath = ''
+
+    -- Pick one file at random
+    if #files > 0 then
+        soundPath = files[math.random(#files)]
+    else
+        log('W', M.logTag, 'No sound files found in the directory: ' .. 'pacenotes_sp/global/' .. M.micId .. '/' .. soundName)
+        return
+    end
+
+    -- Play the sound
+    local new_sound = {
+        played = false,
+        path = soundPath
+    }
+    table.insert(M.audioQueue, new_sound)
+    log('I', M.logTag, 'Playing mic sound: ' .. soundPath)
+end
+
 local function findClosestCheckpoint(position)
     if not position then
         local my_veh = be:getPlayerVehicle(0)
@@ -218,7 +247,10 @@ local function resetRally(checkpoint_index)
 
     -- setup distance tracking from checkpoints
     M.last_distance = M.checkpoints_array[M.checkpoint_index].d
-    M.distance_of_last_queued_note = M.last_distance
+    M.distance_of_last_queued_note = M.last_distance - 1
+    M.is_going_forwards = true
+    M.furthest_distance = M.last_distance
+    M.backtrack_distance = M.last_distance
 
     M.last_position = position
 
@@ -273,9 +305,15 @@ local function loadRally(rallyId)
     M.checkpoints_array = file[1]
     M.pacenotes_data = file[2]
 
-    if file[3] and file[3].playbackVolumeMultiplier then
-        log('I', M.logTag, 'loading temporary playback volume multiplier: ' .. file[3].playbackVolumeMultiplier)
-        M.tempPlaybackVolumeMultiplier = file[3].playbackVolumeMultiplier
+    if file[3] then
+        if file[3].playbackVolumeMultiplier then
+            log('I', M.logTag, 'loading temporary playback volume multiplier: ' .. file[3].playbackVolumeMultiplier)
+            M.tempPlaybackVolumeMultiplier = file[3].playbackVolumeMultiplier
+        end
+
+        if file[3].micId then
+            M.micId = file[3].micId
+        end
     end
 
     resetRally()
@@ -367,6 +405,7 @@ local function cleanup()
     M.isRecordingNewPositions = false
 
     M.tempPlaybackVolumeMultiplier = 1
+    M.micId = nil
 
     clearQueue()
 
@@ -553,26 +592,50 @@ local function updateRally(dt)
         reset_this_tick = true
     else
         updateDistance(position)
+
+        -- check if we are going the wrong way
+        M.furthest_distance = math.max(M.furthest_distance, M.last_distance)
+        M.backtrack_distance = math.min(M.backtrack_distance, M.last_distance)
+
+        local distanceThreshold = M.is_going_forwards and M.settings.wrong_way_threshold or M.settings.wrong_way_repeat_distance
+        if (M.furthest_distance - M.last_distance) >= distanceThreshold then
+            log('I', M.logTag, 'wrong way detected')
+            M.furthest_distance = M.last_distance
+            M.backtrack_distance = M.last_distance
+            clearQueue()
+            M.is_going_forwards = false
+
+            M.playMicSound('wrong_way')
+        end
+
+        if not M.is_going_forwards and (M.last_distance - M.backtrack_distance) >= M.settings.wrong_way_threshold then
+            log('I', M.logTag, 'back on track')
+            M.is_going_forwards = true
+            resetRally(math.min(M.checkpoint_index + 2, #M.checkpoints_array))
+            reset_this_tick = true
+        end
     end
 
     M.last_position = position
 
-    local vel = my_veh:getVelocity()
-    local speedAlongTrack = 0
+    if M.is_going_forwards then
+        local vel = my_veh:getVelocity()
+        local speedAlongTrack = 0
 
-    local checkpoint = M.checkpoints_array[M.checkpoint_index]
-    speedAlongTrack = vel:dot(vec3(checkpoint.dx, checkpoint.dy, checkpoint.dz))
+        local checkpoint = M.checkpoints_array[M.checkpoint_index]
+        speedAlongTrack = vel:dot(vec3(checkpoint.dx, checkpoint.dy, checkpoint.dz))
 
-    -- if this speed is above 90, assume it is a reset and ignore it
-    if speedAlongTrack > 90 then
-        if reset_this_tick then
-            speedAlongTrack = 0
-        else
-            speedAlongTrack = 90
+        -- if this speed is above 90, assume it is a reset and ignore it
+        if speedAlongTrack > 90 then
+            if reset_this_tick then
+                speedAlongTrack = 0
+            else
+                speedAlongTrack = 90
+            end
         end
-    end
 
-    queueUpUntil(checkpoint.d + M.settings.pacenote_playback.lookahead_distance_base + speedAlongTrack * M.settings.pacenote_playback.speed_multiplier)
+        queueUpUntil(checkpoint.d + M.settings.pacenote_playback.lookahead_distance_base + speedAlongTrack * M.settings.pacenote_playback.speed_multiplier)
+    end
 
     M.guiSendRallyData()
 end
@@ -587,7 +650,12 @@ local function updateAudioQueue(dt)
 
     -- play the sound
     if not currentSound.played and M.rallyId then
-        local path = 'pacenotes_sp/' .. M.levelId .. '/' .. M.rallyId .. '/pacenotes/' .. currentSound.pacenote.wave_name
+        local path = ''
+        if currentSound.pacenote then
+            path = 'pacenotes_sp/' .. M.levelId .. '/' .. M.rallyId .. '/pacenotes/' .. currentSound.pacenote.wave_name
+        else
+            path = currentSound.path
+        end
         local result = Engine.Audio.playOnce('AudioGui', path, {volume=M.settings.sound_data.volume * M.tempPlaybackVolumeMultiplier})
 
         if result ~= nil then
@@ -597,7 +665,7 @@ local function updateAudioQueue(dt)
         end
         currentSound.played = true
 
-        if currentSound.pacenote.analysis then
+        if currentSound.pacenote and currentSound.pacenote.analysis then
             currentSound.pacenote.analysis.playStartDistance = M.last_distance
             currentSound.pacenote.analysis.playbackTime = roundNear(currentSound.time, 0.001)
         end
@@ -607,9 +675,9 @@ local function updateAudioQueue(dt)
         currentSound.time = currentSound.time - dt
 
         local finishedPlaying = currentSound.time <= 0
-        local continueCondition = currentSound.pacenote.continueDistance == nil or currentSound.pacenote.d - currentSound.pacenote.continueDistance <= M.last_distance
+        local continueCondition = currentSound.pacenote == nil or currentSound.pacenote.continueDistance == nil or currentSound.pacenote.d - currentSound.pacenote.continueDistance <= M.last_distance
 
-        if finishedPlaying and currentSound.pacenote.analysis and not currentSound.pacenote.analysis.playEndDistance then
+        if finishedPlaying and currentSound.pacenote and currentSound.pacenote.analysis and not currentSound.pacenote.analysis.playEndDistance then
             currentSound.pacenote.analysis.playEndDistance = M.last_distance
             M.guiSendPacenoteData()
         end
@@ -1116,6 +1184,7 @@ local function guiInit()
     M.guiSendGuiData()
 end
 
+M.playMicSound = playMicSound
 M.loadRally = loadRally
 M.newRally = newRally
 M.loadOrNewRally = loadOrNewRally
