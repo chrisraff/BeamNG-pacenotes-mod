@@ -234,7 +234,7 @@ local function initRecce()
     M.savingRecce = false
     M.isRecordingNewPositions = true
 
-    M.serverResetCount()
+    M.serverUpdateMission()
 
     M.guiSendPacenoteData()
     M.guiSendMissionData()
