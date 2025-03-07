@@ -543,6 +543,11 @@ local function onClientPostStartMission(levelPath)
     end
 end
 
+local function onDamage(data, data_delta)
+    log('I', M.logTag, 'onDamage')
+    local newData = jsonDecode(data)
+end
+
 -- update functions
 
 local function updateDistance(position)
@@ -881,7 +886,6 @@ local function deleteUnusedSounds()
         -- If the file is unused, delete it
         if not tableContains(usedFiles, fileBaseName) then
             FS:removeFile('pacenotes_sp/' .. M.levelId .. '/' .. M.rallyId .. '/pacenotes/' .. filename)
-        else
             log('I', M.logTag, 'Deleting unused sound: ' .. filename)
         end
     end
@@ -1228,6 +1232,7 @@ M.onAnyMissionChanged = onAnyMissionChanged
 M.onUiChangedState = onUiChangedState
 M.saveSettings = saveSettings
 M.onClientPostStartMission = onClientPostStartMission
+M.onDamage = onDamage
 M.onUpdate = onUpdate
 M.deletePacenote = deletePacenote
 M.deleteDisabledPacenotes = deleteDisabledPacenotes
