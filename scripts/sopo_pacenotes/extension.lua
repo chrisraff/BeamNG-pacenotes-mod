@@ -881,7 +881,7 @@ local function deleteUnusedSounds()
         -- If the file is unused, delete it
         if not tableContains(usedFiles, fileBaseName) then
             FS:removeFile('pacenotes_sp/' .. M.levelId .. '/' .. M.rallyId .. '/pacenotes/' .. filename)
-            end
+        else
             log('I', M.logTag, 'Deleting unused sound: ' .. filename)
         end
     end

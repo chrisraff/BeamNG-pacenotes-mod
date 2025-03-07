@@ -2,10 +2,11 @@
 
 This mod allows you to easily record your own pacenotes completely within *BeamNG.drive* (after a one-time setup), and seamlessly playback pacenotes without any additional steps.
 
-### YouTube showcase:
-[![Pacenotes Demo](https://img.youtube.com/vi/UfHfOpgCGWE/0.jpg)](https://www.youtube.com/watch?v=UfHfOpgCGWE)
+### YouTube Setup Guide:
+[![Pacenotes Demo](https://img.youtube.com/vi/5HVboV1GvKE/0.jpg)](https://www.youtube.com/watch?v=5HVboV1GvKE)
 
 ## Key Features
+- Plug and play audio pacenotes, no external software needed for playback
 - No robotic-sounding pacenotes
 - No need for the map editor
 - No editing text files
@@ -20,9 +21,10 @@ This mod allows you to easily record your own pacenotes completely within *BeamN
 3. **Start the scenario or time trial** – Pacenotes will load and play automatically.
 
 ## Tuning Playback
-- **Lookahead Distance**: Determines how many meters ahead pacenotes are triggered.  
+These playback settings can be tuned from the UI or via keybinds (under "General").
+- **Lookahead Distance**: Determines how many meters ahead pacenotes are triggered.
   Example: If set to 40, you’ll hear about a turn 40 meters before you reach it.
-- **Speed Multiplier**: Adjusts the lookahead distance dynamically based on your speed.  
+- **Speed Sensitivity**: Adjusts the lookahead distance dynamically based on your speed.
   Experiment with this to find the best balance for your driving.
 - **Volume**: Controls the playback volume of pacenotes.
 
@@ -35,7 +37,11 @@ This mod allows you to easily record your own pacenotes completely within *BeamN
    - *Note*: The track is not editable after the first drive. Avoid backing up or crashing while recording. You can edit and record new pacenotes after finishing the course.
 
 ## How to Set Up the Mic Server
-### One-time setup steps:
+### Mic Server Application - One-time setup steps:
+1. Install the [dedicated mic server application](https://github.com/chrisraff/custom-pacenotes-mic-app/releases) from my GitHub repo.
+2. Launch the mic server that you just installed.
+3. Launch (or switch back to) *BeamNG.drive* and click **"Connect"** in the Pacenote Editor UI.
+### Python installation - One-time setup steps:
 1. **Install Python** (if you don’t have it). You can get it from many places, but the [Microsoft App Store](https://apps.microsoft.com/detail/9nrwmjp3717k?hl=en-US&gl=US) might be the easiest option.
 2. **Install the necessary modules:**
    - `pyaudio`
@@ -50,7 +56,7 @@ This mod allows you to easily record your own pacenotes completely within *BeamN
 4. Launch (or switch back to) *BeamNG.drive* and click **"Connect"** in the Pacenote Editor UI.
 
 ### Security Note:
-Python was chosen for the server to ensure transparency. Be cautious when running programs from sources you do not trust or understand.
+Python was originally chosen for the server to ensure transparency, but the mic server application is available for those unfamiliar with Python. Be cautious when running programs from sources you do not trust or understand.
 
 ## Editing Pacenotes
 - While in a rally, you can record a new pacenote at any point by pressing and holding the "Record Pacenote" keybind (you must be connected to the mic server).
