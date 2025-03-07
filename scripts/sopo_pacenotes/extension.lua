@@ -670,6 +670,8 @@ local function updateAudioQueue(dt)
             currentSound.pacenote.analysis.playbackTime = roundNear(currentSound.time, 0.001)
         end
 
+        M.audioQueueClearing = false
+
     -- track the time of the sound
     else
         currentSound.time = currentSound.time - dt
