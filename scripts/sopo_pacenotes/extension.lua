@@ -1128,18 +1128,33 @@ end
 
 local handleVolumeChange = function(diff)
     M.settings.sound_data.volume = math.min(100, math.max(0, M.settings.sound_data.volume + diff))
+    guihooks.trigger('Message', {
+        ttl = 3,
+        msg = 'Pacenotes volume: ' .. M.settings.sound_data.volume,
+        category = 'sopo_pacenotes_volume'
+    })
     M.guiSendGuiData()
     M.saveSettings()
 end
 
 local handlePacenoteTimingChange = function(diff)
     M.settings.pacenote_playback.lookahead_distance_base = math.min(1000, math.max(0, M.settings.pacenote_playback.lookahead_distance_base + diff))
+    guihooks.trigger('Message', {
+        ttl = 3,
+        msg = 'Pacenotes call distance: ' .. M.settings.pacenote_playback.lookahead_distance_base,
+        category = 'sopo_pacenotes_distance'
+    })
     M.guiSendMissionData()
     M.saveSettings()
 end
 
 local handlePacenoteCarSpeedChange = function(diff)
     M.settings.pacenote_playback.speed_multiplier = math.min(10, math.max(0, M.settings.pacenote_playback.speed_multiplier + diff))
+    guihooks.trigger('Message', {
+        ttl = 3,
+        msg = 'Pacenotes speed sensitivity: ' .. M.settings.pacenote_playback.speed_multiplier,
+        category = 'sopo_pacenotes_speed'
+    })
     M.guiSendMissionData()
     M.saveSettings()
 end
