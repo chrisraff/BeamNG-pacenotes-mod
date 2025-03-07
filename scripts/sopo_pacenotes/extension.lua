@@ -183,7 +183,8 @@ end
 local function clearQueue()
     M.audioQueueClearing = true
 
-    if #M.audioQueue > 0 then
+    -- finish tracking the current note
+    if #M.audioQueue > 0 and M.audioQueue[1].played then
         M.audioQueue = {M.audioQueue[1]}
     end
 end
