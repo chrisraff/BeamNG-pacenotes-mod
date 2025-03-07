@@ -8,7 +8,6 @@ local M = {}
 M.scenarioHandle = nil
 M.rallyId = nil
 M.levelId = nil
-M.micId = nil
 M.mode = "none"
 M.uiState = "none"
 
@@ -43,10 +42,12 @@ M.guiConfig = {
 }
 
 M.tempPlaybackVolumeMultiplier = 1
+M.micId = nil
 
 M.checkpoints_array = nil
 M.checkpoint_index = nil
 M.pacenotes_data = nil
+M.rally_metadata = nil
 
 M.tick = 0
 
@@ -307,13 +308,15 @@ local function loadRally(rallyId)
     M.pacenotes_data = file[2]
 
     if file[3] then
-        if file[3].playbackVolumeMultiplier then
-            log('I', M.logTag, 'loading temporary playback volume multiplier: ' .. file[3].playbackVolumeMultiplier)
-            M.tempPlaybackVolumeMultiplier = file[3].playbackVolumeMultiplier
+        M.rally_metadata = file[3]
+
+        if M.rally_metadata.playbackVolumeMultiplier then
+            log('I', M.logTag, 'loading temporary playback volume multiplier: ' .. M.rally_metadata.playbackVolumeMultiplier)
+            M.tempPlaybackVolumeMultiplier = M.rally_metadata.playbackVolumeMultiplier
         end
 
-        if file[3].micId then
-            M.micId = file[3].micId
+        if M.rally_metadata.micId then
+            M.micId = M.rally_metadata.micId
         end
     end
 
@@ -402,6 +405,7 @@ local function cleanup()
     M.rallyId = nil
     M.scenarioHandle = nil
     M.pacenotes_data = nil
+    M.rally_metadata = nil
 
     M.isRecordingNewPositions = false
 
@@ -900,9 +904,18 @@ local function savePacenoteData()
 
     local new_data = {M.checkpoints_array, M.pacenotes_data}
 
+    if M.rally_metadata ~= nil then
+        new_data[3] = M.rally_metadata
+    end
+
     if M.tempPlaybackVolumeMultiplier ~= 1 then
         new_data[3] = new_data[3] or {}
         new_data[3].playbackVolumeMultiplier = M.tempPlaybackVolumeMultiplier
+    end
+
+    if M.micId then
+        new_data[3] = new_data[3] or {}
+        new_data[3].micId = M.micId
     end
 
     local file = jsonWriteFile('pacenotes_sp/' .. M.levelId .. '/' .. M.rallyId .. '/pacenotes.json', new_data)
