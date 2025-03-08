@@ -84,6 +84,7 @@ angular.module('beamng.apps')
       resizeObserver.observe(document.querySelector('#pacenotes-list'));
 
       let watchEnabled = true;
+      let luaUpdatedPacenotes = false;
 
       scope.toggleMicServerConnection = function () {
         if (scope.isMicServerConnected) {
@@ -264,6 +265,10 @@ angular.module('beamng.apps')
 
       scope.$watch('pacenotes_data', function(newVal, oldVal) {
 
+        if (luaUpdatedPacenotes) {
+          luaUpdatedPacenotes = false;
+          return;
+        }
         if (!newVal)
           return;
         if (!watchEnabled)
@@ -433,6 +438,7 @@ angular.module('beamng.apps')
 
       scope.$on('PacenoteDataUpdate', function(event, args) {
         watchEnabled = false;
+        luaUpdatedPacenotes = true;
 
         scope.recordAtNote = args.recordAtNote;
         scope.isAnalyzing = args.isAnalyzing;
