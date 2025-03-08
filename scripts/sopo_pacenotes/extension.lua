@@ -24,6 +24,7 @@ M.settings = {
         lookahead_distance_base = 60,
         speed_multiplier = 3
     },
+    spoken_damage = true,
     guiPanelStates = {
         ["main-panel"] = true,
         ["load-save-panel"] = false,
@@ -61,6 +62,9 @@ M.last_position = vec3(0, 0, 0)
 
 M.audioQueue = {}
 M.audioQueueClearing = false
+
+-- prevents redundant damage calls
+M.spokenDamage = {}
 
 M.isAnalyzing = true
 
@@ -255,6 +259,8 @@ local function resetRally(checkpoint_index)
     M.backtrack_distance = M.last_distance
 
     M.last_position = position
+
+    M.spokenDamage = {}
 
     -- reset the audio queue
     clearQueue()
@@ -543,9 +549,81 @@ local function onClientPostStartMission(levelPath)
     end
 end
 
+M.queueDamageSound = function(soundName)
+    if M.spokenDamage[soundName] then return end
+
+    M.spokenDamage[soundName] = true
+    playMicSound(soundName)
+end
+
 local function onDamage(data, data_delta)
     log('I', M.logTag, 'onDamage')
     local newData = jsonDecode(data)
+    local dmg = jsonDecode(data_delta)
+
+    if M.mode ~= "rally" or not M.settings.spoken_damage then
+        return
+    end
+
+    if dmg.powertrain then
+        if dmg.powertrain.spindleRR or dmg.powertrain.spindleRL or dmg.powertrain.spindleFR or dmg.powertrain.spindleFL then
+            log('I', M.logTag, 'spindle gone')
+
+            M.queueDamageSound('dmg/powertrain/spindle')
+        end
+
+        -- dmg.powertrain.wheelaxleFR
+        -- TODO axels. If you lose axel and spindle, only report spindle
+    end
+
+    if dmg.wheels then
+        for key, value in pairs(dmg.wheels) do
+            -- check all tires individually
+            if key:sub(1, 4) == 'tire' and dmg.wheels[key] then
+                -- TODO if this spindle is already gone, ignore it
+                log('I', M.logTag, 'tire popped, key: ' .. key)
+                M.queueDamageSound('dmg/wheels/' .. key)
+            end
+        end
+    end
+
+    if dmg.engine then
+        if dmg.engine.reducedTorque then
+            log('I', M.logTag, 'reduced Torque')
+            M.queueDamageSound('dmg/engine/reducedTorque')
+        end
+        if dmg.engine.oilOverheating then
+            log('I', M.logTag, 'oil overheating')
+            M.queueDamageSound('dmg/engine/oilOverheating')
+        end
+        if dmg.engine.oilpanLeak then
+            log('I', M.logTag, 'oil pan leak')
+            M.queueDamageSound('dmg/engine/oilpanLeak')
+        end
+        if dmg.engine.oilLevelCritical then
+            log('I', M.logTag, 'oil level critical')
+            M.queueDamageSound('dmg/engine/oilLevelCritical')
+        end
+        if dmg.engine.radiatorLeak then
+            log('I', M.logTag, 'radiator leak')
+            M.queueDamageSound('dmg/engine/radiatorLeak')
+        end
+        if dmg.engine.turbochargerDamaged then
+            log('I', M.logTag, 'turbocharger damaged')
+            M.queueDamageSound('dmg/engine/turbochargerDamaged')
+        end
+        if dmg.engine.turbochargerHot then
+            log('I', M.logTag, 'turbocharger hot')
+            M.queueDamageSound('dmg/engine/turbochargerHot')
+        end
+    end
+
+    if dmg.energyStorage then
+        if dmg.energyStorage.mainTank then
+            log('I', M.logTag, 'main tank damage')
+            M.queueDamageSound('dmg/energyStorage/mainTank')
+        end
+    end
 end
 
 -- update functions
