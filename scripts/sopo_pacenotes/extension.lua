@@ -61,6 +61,7 @@ M.distance_of_last_queued_note = -1
 M.last_position = vec3(0, 0, 0)
 
 M.audioQueue = {}
+M.audioLowPriorityQueue = {}
 M.audioQueueClearing = false
 
 -- prevents redundant damage calls
@@ -192,13 +193,16 @@ local function clearQueue()
     if #M.audioQueue > 0 and M.audioQueue[1].played then
         M.audioQueue = {M.audioQueue[1]}
     end
+    M.audioLowPriorityQueue = {}
 end
 
-local function playMicSound(soundName)
+local function playMicSound(soundName, timeDelay)
     if M.micId == nil then return end
     -- Search for all files in the folder
     local files = FS:findFiles('pacenotes_sp/global/' .. M.micId .. '/' .. soundName, '*.*', -1, true, false)
     local soundPath = ''
+
+    timeDelay = timeDelay or 0
 
     -- Pick one file at random
     if #files > 0 then
@@ -211,9 +215,10 @@ local function playMicSound(soundName)
     -- Play the sound
     local new_sound = {
         played = false,
-        path = soundPath
+        path = soundPath,
+        time = timeDelay
     }
-    table.insert(M.audioQueue, new_sound)
+    table.insert(M.audioLowPriorityQueue, new_sound)
     log('I', M.logTag, 'Playing mic sound: ' .. soundPath)
 end
 
@@ -553,7 +558,7 @@ M.queueDamageSound = function(soundName)
     if M.spokenDamage[soundName] then return end
 
     M.spokenDamage[soundName] = true
-    playMicSound(soundName)
+    playMicSound(soundName, 3) -- queue with 3 seconds delay
 end
 
 local function onDamage(data, data_delta)
@@ -729,9 +734,20 @@ local function updateRally(dt)
 end
 
 local function updateAudioQueue(dt)
-    -- heavily inspired by pacenotes core mod: https://www.beamng.com/resources/pacenotes-core.10349/
+    -- advance timers on the low priority queue
+    for i, sound in ipairs(M.audioLowPriorityQueue) do
+        if sound.time and sound.time > 0 then
+            sound.time = sound.time - dt
+        end
+    end
 
-    -- if empty, do nothing
+    -- if the main queue is empty, check the low priority queue
+    if #M.audioQueue == 0 and #M.audioLowPriorityQueue > 0 and (M.audioLowPriorityQueue[1].time == nil or M.audioLowPriorityQueue[1].time <= 0) then
+        table.insert(M.audioQueue, M.audioLowPriorityQueue[1])
+        table.remove(M.audioLowPriorityQueue, 1)
+    end
+
+    -- if main queue is empty, do nothing
     if #M.audioQueue == 0 then return end
 
     local currentSound = M.audioQueue[1]
