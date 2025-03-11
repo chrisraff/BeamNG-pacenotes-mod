@@ -916,6 +916,7 @@ local function updateRecce(dt)
 end
 
 local function onUpdate(dt)
+    M.spyOnAiPacenotes()
     if M.mode == "rally" then
         updateRally(dt)
     elseif M.mode == "recce" then
@@ -1034,6 +1035,99 @@ local function resetAnalysis()
         pacenote.analysis = nil
     end
     M.guiSendPacenoteData()
+end
+
+M.rallyManager = nil
+M.aipDir = nil
+M.spyOnAiPacenotes = function()
+    if not M.rallyManager then
+        M.rallyManager = extensions.gameplay_aipacenotes.getRallyManager()
+    end
+
+    if not M.rallyManager then return end
+
+    if M.aipDir ~= M.rallyManager.missionDir and M.mode ~= "rally" then
+        -- M.setupFromAiPacenotes()
+    end
+end
+
+M.setupFromAiPacenotes = function()
+    if M.rallyId then
+        log('I', M.logTag, 'We already have a rally');
+        return
+    end
+
+    if M.rallyManager then
+        local driveline = M.rallyManager.drivelineTracker.driveline
+
+        local points = driveline.points
+        M.rallyManager.notebook.pacenotes:sort()
+        local pacenotes = M.rallyManager.notebook.pacenotes.sorted
+
+        M.checkpoints_array = {}
+        M.pacenotes_data = {}
+
+        local lastdv = {x = 1, y = 0, z = 0}
+        local lastd = 0
+
+        -- build the track line
+        for i, point in ipairs(points) do
+            if i > 1 then
+                local distance = math.sqrt(computeDistSquared(point.pos.x, point.pos.y, point.pos.z, M.checkpoints_array[i - 1].x, M.checkpoints_array[i - 1].y, M.checkpoints_array[i - 1].z))
+                lastd = lastd + distance
+
+                local dv = {x = point.pos.x - M.checkpoints_array[i - 1].x, y = point.pos.y - M.checkpoints_array[i - 1].y, z = point.pos.z - M.checkpoints_array[i - 1].z}
+            end
+
+            table.insert(M.checkpoints_array, {
+                x = point.pos.x,
+                y = point.pos.y,
+                z = point.pos.z,
+                d = lastd
+            })
+
+            if i > 2 then
+                local dirVector = vec3(
+                    M.checkpoints_array[i].x - M.checkpoints_array[i-1].x,
+                    M.checkpoints_array[i].y - M.checkpoints_array[i-1].y,
+                    M.checkpoints_array[i].z - M.checkpoints_array[i-1].z
+                ):normalized()
+                M.checkpoints_array[i].dx = dirVector.x
+                M.checkpoints_array[i].dy = dirVector.y
+                M.checkpoints_array[i].dz = dirVector.z
+
+                if i == 2 then
+                    M.checkpoints_array[1].dx = dirVector.x
+                    M.checkpoints_array[1].dy = dirVector.y
+                    M.checkpoints_array[1].dz = dirVector.z
+                end
+            end
+        end
+
+        local searchIdxStart = 1
+        for _, pacenote in ipairs(pacenotes) do
+            local point = driveline:findNearestPoint(pacenote:getCornerStartWaypoint().pos, searchIdxStart)
+            searchIdxStart = point.id
+
+            table.insert(M.pacenotes_data, {
+                d = M.checkpoints_array[point.id].d,
+                aipacenote = pacenote
+            })
+        end
+
+        M.rallyId = M.rallyManager.missionDir -- note this has /gameplay/missions/level/...
+        M.mode = "rally"
+
+        resetRally()
+
+        M.guiConfig.isRallyChanged = false
+
+        M.serverUpdateMission()
+
+        M.guiSendMissionData()
+        M.guiSendPacenoteData()
+        M.guiSendGuiData()
+    end
 end
 
 -- server functions
