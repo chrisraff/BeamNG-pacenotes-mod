@@ -17,7 +17,7 @@ M.settings = {
         volume = 20
     },
     reset_threshold = 10, -- if you move this much since last tick, reset
-    wrong_way_threshold = 10, -- if you travel this far backwards, play wrong way sound and reset notes
+    wrong_way_threshold = 15, -- if you travel this far backwards, play wrong way sound and reset notes
     wrong_way_repeat_distance = 40, -- if you keep going backwards, you will be warned again at this distance
     off_course_playback_reset_dist = 30, -- if you drive off course this much, reset playback
     pacenote_playback = {
@@ -25,6 +25,8 @@ M.settings = {
         speed_multiplier = 3
     },
     spoken_damage = true,
+    aipacenoteRallies = true,
+    aipacenoteRallyMicId = 'sopo_psvr2',
     guiPanelStates = {
         ["main-panel"] = true,
         ["load-save-panel"] = false,
@@ -196,30 +198,98 @@ local function clearQueue()
     M.audioLowPriorityQueue = {}
 end
 
-local function playMicSound(soundName, timeDelay)
+local function playMicSound(soundName, queue, timeDelay)
+    if M.micId == nil then return end
+    queue = queue or M.audioQueue
+
+    local soundPath = M.getMicSound(soundName)
+
+    -- Play the sound
+    local new_sound = {
+        played = false,
+        path = soundPath,
+        wait = timeDelay
+    }
+    table.insert(queue, new_sound)
+    log('I', M.logTag, 'Playing mic sound: ' .. soundPath)
+end
+
+M.getMicSound = function(soundName)
     if M.micId == nil then return end
     -- Search for all files in the folder
     local files = FS:findFiles('pacenotes_sp/global/' .. M.micId .. '/' .. soundName, '*.*', -1, true, false)
-    local soundPath = ''
-
-    timeDelay = timeDelay or 0
+    local soundPath = nil
 
     -- Pick one file at random
     if #files > 0 then
         soundPath = files[math.random(#files)]
     else
         log('W', M.logTag, 'No sound files found in the directory: ' .. 'pacenotes_sp/global/' .. M.micId .. '/' .. soundName)
-        return
+        return nil
     end
 
-    -- Play the sound
-    local new_sound = {
-        played = false,
-        path = soundPath,
-        time = timeDelay
-    }
-    table.insert(M.audioLowPriorityQueue, new_sound)
-    log('I', M.logTag, 'Playing mic sound: ' .. soundPath)
+    return soundPath
+end
+
+-- useful reference: extensions/gameplay/notebook/structured.lua
+M.getPacenoteDescriptions = function(aipacenote)
+    local descriptions = {}
+    if aipacenote.structured.fields.modCrest then
+        table.insert(descriptions, 'calls/crest')
+    end
+    if aipacenote.structured.fields.modCaution or aipacenote.structured.fields.modCaution1 then
+        table.insert(descriptions, 'calls/caution')
+    end
+    if aipacenote.structured.fields.modJump then
+        table.insert(descriptions, 'calls/jump')
+    end
+    if aipacenote.structured.fields.modWater then
+        table.insert(descriptions, 'calls/water')
+    end
+
+    --handle directions
+    if aipacenote.structured.fields.cornerDirection ~= 0 then
+        local turnDesc= 'calls/direction'
+        if aipacenote.structured.fields.cornerDirection == 1 then
+            turnDesc = turnDesc .. 'right/'
+        elseif aipacenote.structured.fields.cornerDirection == -1 then
+            turnDesc = turnDesc .. 'left/'
+        end
+
+        if aipacenote.structured.fields.modSquare then
+            turnDesc = turnDesc .. 'square'
+        else
+            -- grade corner from 1 to 6
+            local severity = tonumber(aipacenote.structured.fields.cornerSeverity)
+            for i = 1, 6 do
+                if severity < i * 100/6 then
+                    turnDesc = turnDesc .. (7 - i)
+                    break
+                end
+            end
+        end
+        table.insert(descriptions, turnDesc)
+    end
+
+    if aipacenote.structured.fields.modDontCut then
+        table.insert(descriptions, 'calls/dontcut')
+    end
+
+    if aipacenote.structured.fields.cornerLength > 0 and aipacenote.structured.fields.cornerLength <= 15 then
+        table.insert(descriptions, 'calls/cornerLength/short')
+    elseif aipacenote.structured.fields.cornerLength >= 25 and aipacenote.structured.fields.cornerLength <= 35 then
+        table.insert(descriptions, 'calls/cornerLength/long')
+    elseif aipacenote.structured.fields.cornerLength >= 35 then
+        table.insert(descriptions, 'calls/cornerLength/extra_long')
+    end
+
+    if aipacenote.structured.fields.cornerChange == 10 then
+        table.insert(descriptions, 'calls/opens')
+    elseif aipacenote.structured.fields.cornerChange == 20 then
+        table.insert(descriptions, 'calls/tightens')
+    end
+
+    return descriptions
 end
 
 local function findClosestCheckpoint(position)
@@ -558,7 +628,7 @@ M.queueDamageSound = function(soundName)
     if M.spokenDamage[soundName] then return end
 
     M.spokenDamage[soundName] = true
-    playMicSound(soundName, 3) -- queue with 3 seconds delay
+    playMicSound(soundName, M.audioLowPriorityQueue, 3) -- queue with 3 seconds delay
 end
 
 local function onDamage(data, data_delta)
@@ -736,13 +806,13 @@ end
 local function updateAudioQueue(dt)
     -- advance timers on the low priority queue
     for i, sound in ipairs(M.audioLowPriorityQueue) do
-        if sound.time and sound.time > 0 then
-            sound.time = sound.time - dt
+        if sound.wait and sound.wait > 0 then
+            sound.wait = sound.wait - dt
         end
     end
 
     -- if the main queue is empty, check the low priority queue
-    if #M.audioQueue == 0 and #M.audioLowPriorityQueue > 0 and (M.audioLowPriorityQueue[1].time == nil or M.audioLowPriorityQueue[1].time <= 0) then
+    if #M.audioQueue == 0 and #M.audioLowPriorityQueue > 0 and (M.audioLowPriorityQueue[1].wait == nil or M.audioLowPriorityQueue[1].wait <= 0) then
         table.insert(M.audioQueue, M.audioLowPriorityQueue[1])
         table.remove(M.audioLowPriorityQueue, 1)
     end
@@ -755,10 +825,19 @@ local function updateAudioQueue(dt)
     -- play the sound
     if not currentSound.played and M.rallyId then
         local path = ''
-        if currentSound.pacenote then
+        if currentSound.pacenote and currentSound.pacenote.wave_name then
             path = 'pacenotes_sp/' .. M.levelId .. '/' .. M.rallyId .. '/pacenotes/' .. currentSound.pacenote.wave_name
+        elseif currentSound.pacenote and currentSound.pacenote.pacenoteGeneric then
+            path = M.getMicSound(currentSound.pacenote.pacenoteGeneric)
         else
             path = currentSound.path
+        end
+
+        if path == nil then
+            log('E', M.logTag, 'sound path is nil')
+            -- remove from queue
+            table.remove(M.audioQueue, 1)
+            return
         end
         local result = Engine.Audio.playOnce('AudioGui', path, {volume=M.settings.sound_data.volume * M.tempPlaybackVolumeMultiplier})
 
@@ -1057,6 +1136,13 @@ M.setupFromAiPacenotes = function()
         return
     end
 
+    if M.settings.aipacenoteRallyMicId then
+        M.micId = M.settings.aipacenoteRallyMicId
+    else
+        log('I', M.logTag, 'No mic id found in settings');
+        return
+    end
+
     if M.rallyManager then
         local driveline = M.rallyManager.drivelineTracker.driveline
 
@@ -1109,10 +1195,15 @@ M.setupFromAiPacenotes = function()
             local point = driveline:findNearestPoint(pacenote:getCornerStartWaypoint().pos, searchIdxStart)
             searchIdxStart = point.id
 
-            table.insert(M.pacenotes_data, {
-                d = M.checkpoints_array[point.id].d,
-                aipacenote = pacenote
-            })
+            descriptions = M.getPacenoteDescriptions(pacenote)
+
+            for i, description in ipairs(descriptions) do
+                local pacenote = {
+                    d = M.checkpoints_array[point.id].d + (i-1) / #descriptions,
+                    pacenoteGeneric = description
+                }
+                table.insert(M.pacenotes_data, pacenote)
+            end
         end
 
         M.rallyId = M.rallyManager.missionDir -- note this has /gameplay/missions/level/...
