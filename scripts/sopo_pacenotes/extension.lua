@@ -232,22 +232,41 @@ M.getMicSound = function(soundName)
 end
 
 -- useful reference: extensions/gameplay/notebook/structured.lua
+M.severityList = {
+    'flat',
+    '6',
+    '5',
+    '4',
+    '3',
+    '2',
+    '1',
+    'hairpin_open',
+    'hairpin',
+    'hairpin_tight'
+}
 M.getPacenoteDescriptions = function(aipacenote)
     local descriptions = {}
-    if aipacenote.structured.fields.modCrest then
-        table.insert(descriptions, 'calls/crest')
+
+    -- and / into
+    if string.find(aipacenote._cached_fgData.note_text:lower(), 'into') then
+        table.insert(descriptions, 'calls/transitional/into')
     end
-    if aipacenote.structured.fields.modCaution or aipacenote.structured.fields.modCaution1 then
-        table.insert(descriptions, 'calls/caution')
-    end
-    if aipacenote.structured.fields.modJump then
-        table.insert(descriptions, 'calls/jump')
-    end
-    if aipacenote.structured.fields.modWater then
-        table.insert(descriptions, 'calls/water')
+    if string.find(aipacenote._cached_fgData.note_text:lower(), 'and') then
+        table.insert(descriptions, 'calls/transitional/and')
     end
 
-    --handle directions
+    -- cautions
+    if aipacenote.structured.fields.modCaution or aipacenote.structured.fields.modCaution1 then
+        table.insert(descriptions, 'calls/caution1')
+    end
+    if aipacenote.structured.fields.modCaution2 then
+        table.insert(descriptions, 'calls/caution2')
+    end
+    if aipacenote.structured.fields.modCaution3 then
+        table.insert(descriptions, 'calls/caution3')
+    end
+
+    --handle directions and severity
     if aipacenote.structured.fields.cornerDirection ~= 0 then
         local turnDesc= 'calls/direction'
         if aipacenote.structured.fields.cornerDirection == 1 then
@@ -256,21 +275,31 @@ M.getPacenoteDescriptions = function(aipacenote)
             turnDesc = turnDesc .. 'left/'
         end
 
-        if aipacenote.structured.fields.modSquare then
+        -- sometimes note text mentions square, but not mod
+        if aipacenote.structured.fields.modSquare or string.find(aipacenote._cached_fgData.note_text:lower(), 'square') then
             turnDesc = turnDesc .. 'square'
         else
-            -- grade corner from 1 to 6
+            -- grade corner from according to severity list
             local severity = tonumber(aipacenote.structured.fields.cornerSeverity)
-            for i = 1, 6 do
-                if severity < i * 100/6 then
-                    turnDesc = turnDesc .. (7 - i)
-                    break
-                end
-            end
+            local idx = math.max(1, roundNear(severity / #M.severityList, 1))
+            turnDesc = turnDesc .. M.severityList[idx]
         end
         table.insert(descriptions, turnDesc)
     end
 
+    if aipacenote.structured.fields.modCrest then
+        table.insert(descriptions, 'calls/crest')
+    end
+    if aipacenote.structured.fields.modJump then
+        table.insert(descriptions, 'calls/jump')
+    end
+    if aipacenote.structured.fields.modWater then
+        table.insert(descriptions, 'calls/water')
+    end
+    -- narrows is not officially documented, but sometimes used
+    if aipacenote.structured.fields.modNarrows then
+        table.insert(descriptions, 'calls/narrows')
+    end
     if aipacenote.structured.fields.modDontCut then
         table.insert(descriptions, 'calls/dontcut')
     end
@@ -1196,6 +1225,9 @@ M.setupFromAiPacenotes = function()
             searchIdxStart = point.id
 
             descriptions = M.getPacenoteDescriptions(pacenote)
+
+            -- call this to ensure cached flowgraph data is populated
+            pacenote:asFlowgraphData(M.rallyManager.codriver)
 
             for i, description in ipairs(descriptions) do
                 local pacenote = {
