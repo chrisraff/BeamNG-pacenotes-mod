@@ -288,7 +288,11 @@ M.getPacenoteDescriptions = function(aipacenote)
     end
 
     if aipacenote.structured.fields.modCrest then
-        table.insert(descriptions, 'calls/crest')
+        if aipacenote.structured.fields.cornerDirection ~= 0 then
+            table.insert(descriptions, 'calls/crest_over')
+        else
+            table.insert(descriptions, 'calls/crest')
+        end
     end
     if aipacenote.structured.fields.modJump then
         table.insert(descriptions, 'calls/jump')
