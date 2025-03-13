@@ -1025,6 +1025,19 @@ local function updateRecce(dt)
     end
 
     M.guiSendRallyData()
+
+    -- check if this is an official rally
+    M.rallyManager = extensions.gameplay_aipacenotes.getRallyManager()
+    if M.rallyManager and #M.pacenotes_data == 0 and M.settings.aipacenoteRallies then
+        guihooks.trigger('toastrMsg', {
+            type = "info",
+            title = "Auto Pacenotes",
+            msg = "Custom Rally Pacenotes will make generic pacenotes from the rally data.",
+            config = {timeOut = 7000}
+        })
+        M.cleanup()
+        M.setupFromAiPacenotes()
+    end
 end
 
 local function onUpdate(dt)
@@ -1150,25 +1163,15 @@ local function resetAnalysis()
 end
 
 M.rallyManager = nil
-M.aipDir = nil
 M.spyOnAiPacenotes = function()
     if not M.rallyManager then
         M.rallyManager = extensions.gameplay_aipacenotes.getRallyManager()
     end
 
     if not M.rallyManager then return end
-
-    if M.aipDir ~= M.rallyManager.missionDir and M.mode ~= "rally" then
-        -- M.setupFromAiPacenotes()
-    end
 end
 
 M.setupFromAiPacenotes = function()
-    if M.rallyId then
-        log('I', M.logTag, 'We already have a rally');
-        return
-    end
-
     if M.settings.aipacenoteRallyMicId then
         M.micId = M.settings.aipacenoteRallyMicId
     else
