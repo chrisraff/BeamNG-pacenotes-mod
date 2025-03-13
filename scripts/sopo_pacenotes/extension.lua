@@ -246,6 +246,7 @@ M.severityList = {
     'hairpin',
     'hairpin_tight'
 }
+M.distanceList = {30, 40, 50, 60, 70, 80, 90, 100, 150, 200, 250, 300, 350, 500}
 M.getPacenoteDescriptions = function(aipacenote)
     local descriptions = {}
 
@@ -322,6 +323,18 @@ M.getPacenoteDescriptions = function(aipacenote)
         table.insert(descriptions, 'calls/opens')
     elseif aipacenote.structured.fields.cornerChange == 20 then
         table.insert(descriptions, 'calls/tightens')
+    end
+
+    local distance = tonumber(aipacenote._cached_fgData.distanceAfter)
+    if distance and distance > 25 and distance < 550 then
+        -- find the nearest distance
+        local closestIdx = 1
+        for i, dist in ipairs(M.distanceList) do
+            if math.abs(dist - distance) < math.abs(M.distanceList[closestIdx] - distance) then
+                closestIdx = i
+            end
+        end
+        table.insert(descriptions, 'calls/distance/' .. M.distanceList[closestIdx])
     end
 
     return descriptions
@@ -779,6 +792,7 @@ local function updateRally(dt)
 
     if M.rallyId == nil then return end
     if M.settings.spoken_pacenotes == false then return end
+    if not M.settings.aipacenoteRallies and extensions.gameplay_aipacenotes:getRallyManager() then return end
 
     local my_veh = be:getPlayerVehicle(0)
     if my_veh == nil then return end
