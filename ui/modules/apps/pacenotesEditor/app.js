@@ -265,10 +265,12 @@ angular.module('beamng.apps')
 
       scope.$watch('pacenotes_data', function(newVal, oldVal) {
 
+        let userChanged = true;
         if (luaUpdatedPacenotes) {
           luaUpdatedPacenotes = false;
-          return;
+          userChanged = false;
         }
+
         if (!newVal)
           return;
         if (!watchEnabled)
@@ -304,7 +306,8 @@ angular.module('beamng.apps')
           bngApi.engineLua('extensions.scripts_sopo__pacenotes_extension.sortPacenotes()');
         }
 
-        scope.setRallyChanged(true);
+        if (userChanged)
+          scope.setRallyChanged(true);
       }, true); // deep watch: true
 
       scope.selectRow = function (index, playSound = true) {
