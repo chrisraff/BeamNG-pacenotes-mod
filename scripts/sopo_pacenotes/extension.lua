@@ -24,12 +24,14 @@ M.settings = {
         lookahead_distance_base = 60,
         speed_multiplier = 3
     },
+    spoken_pacenotes = true,
     spoken_damage = true,
     guiPanelStates = {
         ["main-panel"] = true,
         ["load-save-panel"] = false,
         ["delete-panel"] = false,
         ["playback-panel"] = true,
+        ["settings-panel"] = false,
         ["mic-server-panel"] = false
     },
     guiTableHeight = 300,
@@ -1260,6 +1262,30 @@ end
 local handlePanelToggle = function()
     M.settings.guiPanelStates['main-panel'] = not M.settings.guiPanelStates['main-panel']
     M.guiSendGuiData()
+end
+
+M.handleToggleDamage = function()
+    M.settings.spoken_damage = not M.settings.spoken_damage
+    local state = M.settings.spoken_damage and 'On' or 'Off'
+    guihooks.trigger('Message', {
+        ttl = 3,
+        msg = 'Rally damage calls: ' .. state,
+        category = 'sopo_pacenotes_damage'
+    })
+    M.guiSendGuiData()
+    M.saveSettings()
+end
+
+M.handleTogglePacenotes = function()
+    M.settings.spoken_pacenotes = not M.settings.spoken_pacenotes
+    local state = M.settings.spoken_pacenotes and 'On' or 'Off'
+    guihooks.trigger('Message', {
+        ttl = 3,
+        msg = 'Custom Rally Pacenotes: ' .. state,
+        category = 'sopo_pacenotes_all'
+    })
+    M.guiSendGuiData()
+    M.saveSettings()
 end
 
 -- gui functions
