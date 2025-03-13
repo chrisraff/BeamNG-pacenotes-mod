@@ -17,7 +17,7 @@ M.settings = {
         volume = 20
     },
     reset_threshold = 10, -- if you move this much since last tick, reset
-    wrong_way_threshold = 10, -- if you travel this far backwards, play wrong way sound and reset notes
+    wrong_way_threshold = 15, -- if you travel this far backwards, play wrong way sound and reset notes
     wrong_way_repeat_distance = 40, -- if you keep going backwards, you will be warned again at this distance
     off_course_playback_reset_dist = 30, -- if you drive off course this much, reset playback
     pacenote_playback = {
@@ -26,6 +26,8 @@ M.settings = {
     },
     spoken_pacenotes = true,
     spoken_damage = true,
+    aipacenoteRallies = true,
+    aipacenoteRallyMicId = 'sopo_psvr2',
     guiPanelStates = {
         ["main-panel"] = true,
         ["load-save-panel"] = false,
@@ -198,30 +200,131 @@ local function clearQueue()
     M.audioLowPriorityQueue = {}
 end
 
-local function playMicSound(soundName, timeDelay)
+local function playMicSound(soundName, queue, timeDelay)
+    if M.micId == nil then return end
+    queue = queue or M.audioQueue
+
+    local soundPath = M.getMicSound(soundName)
+
+    -- Play the sound
+    local new_sound = {
+        played = false,
+        path = soundPath,
+        wait = timeDelay
+    }
+    table.insert(queue, new_sound)
+    log('I', M.logTag, 'Playing mic sound: ' .. soundPath)
+end
+
+M.getMicSound = function(soundName)
     if M.micId == nil then return end
     -- Search for all files in the folder
     local files = FS:findFiles('pacenotes_sp/global/' .. M.micId .. '/' .. soundName, '*.*', -1, true, false)
-    local soundPath = ''
-
-    timeDelay = timeDelay or 0
+    local soundPath = nil
 
     -- Pick one file at random
     if #files > 0 then
         soundPath = files[math.random(#files)]
     else
         log('W', M.logTag, 'No sound files found in the directory: ' .. 'pacenotes_sp/global/' .. M.micId .. '/' .. soundName)
-        return
+        return nil
     end
 
-    -- Play the sound
-    local new_sound = {
-        played = false,
-        path = soundPath,
-        time = timeDelay
-    }
-    table.insert(M.audioLowPriorityQueue, new_sound)
-    log('I', M.logTag, 'Playing mic sound: ' .. soundPath)
+    return soundPath
+end
+
+-- useful reference: extensions/gameplay/notebook/structured.lua
+M.severityList = {
+    'flat',
+    '6',
+    '5',
+    '4',
+    '3',
+    '2',
+    '1',
+    'hairpin_open',
+    'hairpin',
+    'hairpin_tight'
+}
+M.getPacenoteDescriptions = function(aipacenote)
+    local descriptions = {}
+
+    -- and / into
+    if string.find(aipacenote._cached_fgData.note_text:lower(), 'into') then
+        table.insert(descriptions, 'calls/transitional/into')
+    end
+    if string.find(aipacenote._cached_fgData.note_text:lower(), 'and') then
+        table.insert(descriptions, 'calls/transitional/and')
+    end
+
+    -- cautions
+    if aipacenote.structured.fields.modCaution or aipacenote.structured.fields.modCaution1 then
+        table.insert(descriptions, 'calls/caution1')
+    end
+    if aipacenote.structured.fields.modCaution2 then
+        table.insert(descriptions, 'calls/caution2')
+    end
+    if aipacenote.structured.fields.modCaution3 then
+        table.insert(descriptions, 'calls/caution3')
+    end
+
+    --handle directions and severity
+    if aipacenote.structured.fields.cornerDirection ~= 0 then
+        local turnDesc= 'calls/direction'
+        if aipacenote.structured.fields.cornerDirection == 1 then
+            turnDesc = turnDesc .. 'right/'
+        elseif aipacenote.structured.fields.cornerDirection == -1 then
+            turnDesc = turnDesc .. 'left/'
+        end
+
+        -- sometimes note text mentions square, but not mod
+        if aipacenote.structured.fields.modSquare or string.find(aipacenote._cached_fgData.note_text:lower(), 'square') then
+            turnDesc = turnDesc .. 'square'
+        else
+            -- grade corner from according to severity list
+            local severity = tonumber(aipacenote.structured.fields.cornerSeverity)
+            local idx = math.max(1, roundNear(severity / #M.severityList, 1))
+            turnDesc = turnDesc .. M.severityList[idx]
+        end
+        table.insert(descriptions, turnDesc)
+    end
+
+    if aipacenote.structured.fields.modCrest then
+        if aipacenote.structured.fields.cornerDirection ~= 0 then
+            table.insert(descriptions, 'calls/crest_over')
+        else
+            table.insert(descriptions, 'calls/crest')
+        end
+    end
+    if aipacenote.structured.fields.modJump then
+        table.insert(descriptions, 'calls/jump')
+    end
+    if aipacenote.structured.fields.modWater then
+        table.insert(descriptions, 'calls/water')
+    end
+    -- narrows is not officially documented, but sometimes used
+    if aipacenote.structured.fields.modNarrows then
+        table.insert(descriptions, 'calls/narrows')
+    end
+    if aipacenote.structured.fields.modDontCut then
+        table.insert(descriptions, 'calls/dontcut')
+    end
+
+    if aipacenote.structured.fields.cornerLength > 0 and aipacenote.structured.fields.cornerLength <= 15 then
+        table.insert(descriptions, 'calls/cornerLength/short')
+    elseif aipacenote.structured.fields.cornerLength >= 25 and aipacenote.structured.fields.cornerLength <= 35 then
+        table.insert(descriptions, 'calls/cornerLength/long')
+    elseif aipacenote.structured.fields.cornerLength >= 35 then
+        table.insert(descriptions, 'calls/cornerLength/extra_long')
+    end
+
+    if aipacenote.structured.fields.cornerChange == 10 then
+        table.insert(descriptions, 'calls/opens')
+    elseif aipacenote.structured.fields.cornerChange == 20 then
+        table.insert(descriptions, 'calls/tightens')
+    end
+
+    return descriptions
 end
 
 local function findClosestCheckpoint(position)
@@ -560,7 +663,7 @@ M.queueDamageSound = function(soundName)
     if M.spokenDamage[soundName] then return end
 
     M.spokenDamage[soundName] = true
-    playMicSound(soundName, 3) -- queue with 3 seconds delay
+    playMicSound(soundName, M.audioLowPriorityQueue, 3) -- queue with 3 seconds delay
 end
 
 local function onDamage(data, data_delta)
@@ -739,13 +842,13 @@ end
 local function updateAudioQueue(dt)
     -- advance timers on the low priority queue
     for i, sound in ipairs(M.audioLowPriorityQueue) do
-        if sound.time and sound.time > 0 then
-            sound.time = sound.time - dt
+        if sound.wait and sound.wait > 0 then
+            sound.wait = sound.wait - dt
         end
     end
 
     -- if the main queue is empty, check the low priority queue
-    if #M.audioQueue == 0 and #M.audioLowPriorityQueue > 0 and (M.audioLowPriorityQueue[1].time == nil or M.audioLowPriorityQueue[1].time <= 0) then
+    if #M.audioQueue == 0 and #M.audioLowPriorityQueue > 0 and (M.audioLowPriorityQueue[1].wait == nil or M.audioLowPriorityQueue[1].wait <= 0) then
         table.insert(M.audioQueue, M.audioLowPriorityQueue[1])
         table.remove(M.audioLowPriorityQueue, 1)
     end
@@ -758,10 +861,19 @@ local function updateAudioQueue(dt)
     -- play the sound
     if not currentSound.played and M.rallyId then
         local path = ''
-        if currentSound.pacenote then
+        if currentSound.pacenote and currentSound.pacenote.wave_name then
             path = 'pacenotes_sp/' .. M.levelId .. '/' .. M.rallyId .. '/pacenotes/' .. currentSound.pacenote.wave_name
+        elseif currentSound.pacenote and currentSound.pacenote.pacenoteGeneric then
+            path = M.getMicSound(currentSound.pacenote.pacenoteGeneric)
         else
             path = currentSound.path
+        end
+
+        if path == nil then
+            log('E', M.logTag, 'sound path is nil')
+            -- remove from queue
+            table.remove(M.audioQueue, 1)
+            return
         end
         local result = Engine.Audio.playOnce('AudioGui', path, {volume=M.settings.sound_data.volume * M.tempPlaybackVolumeMultiplier})
 
@@ -916,9 +1028,23 @@ local function updateRecce(dt)
     end
 
     M.guiSendRallyData()
+
+    -- check if this is an official rally
+    M.rallyManager = extensions.gameplay_aipacenotes.getRallyManager()
+    if M.rallyManager and #M.pacenotes_data == 0 and M.settings.aipacenoteRallies then
+        guihooks.trigger('toastrMsg', {
+            type = "info",
+            title = "Auto Pacenotes",
+            msg = "Custom Rally Pacenotes will make generic pacenotes from the rally data.",
+            config = {timeOut = 7000}
+        })
+        M.cleanup()
+        M.setupFromAiPacenotes()
+    end
 end
 
 local function onUpdate(dt)
+    M.spyOnAiPacenotes()
     if M.mode == "rally" then
         updateRally(dt)
     elseif M.mode == "recce" then
@@ -1037,6 +1163,104 @@ local function resetAnalysis()
         pacenote.analysis = nil
     end
     M.guiSendPacenoteData()
+end
+
+M.rallyManager = nil
+M.spyOnAiPacenotes = function()
+    if not M.rallyManager then
+        M.rallyManager = extensions.gameplay_aipacenotes.getRallyManager()
+    end
+
+    if not M.rallyManager then return end
+end
+
+M.setupFromAiPacenotes = function()
+    if M.settings.aipacenoteRallyMicId then
+        M.micId = M.settings.aipacenoteRallyMicId
+    else
+        log('I', M.logTag, 'No mic id found in settings');
+        return
+    end
+
+    if M.rallyManager then
+        local driveline = M.rallyManager.drivelineTracker.driveline
+
+        local points = driveline.points
+        M.rallyManager.notebook.pacenotes:sort()
+        local pacenotes = M.rallyManager.notebook.pacenotes.sorted
+
+        M.checkpoints_array = {}
+        M.pacenotes_data = {}
+
+        local lastdv = {x = 1, y = 0, z = 0}
+        local lastd = 0
+
+        -- build the track line
+        for i, point in ipairs(points) do
+            if i > 1 then
+                local distance = math.sqrt(computeDistSquared(point.pos.x, point.pos.y, point.pos.z, M.checkpoints_array[i - 1].x, M.checkpoints_array[i - 1].y, M.checkpoints_array[i - 1].z))
+                lastd = lastd + distance
+
+                local dv = {x = point.pos.x - M.checkpoints_array[i - 1].x, y = point.pos.y - M.checkpoints_array[i - 1].y, z = point.pos.z - M.checkpoints_array[i - 1].z}
+            end
+
+            table.insert(M.checkpoints_array, {
+                x = point.pos.x,
+                y = point.pos.y,
+                z = point.pos.z,
+                d = lastd
+            })
+
+            if i > 2 then
+                local dirVector = vec3(
+                    M.checkpoints_array[i].x - M.checkpoints_array[i-1].x,
+                    M.checkpoints_array[i].y - M.checkpoints_array[i-1].y,
+                    M.checkpoints_array[i].z - M.checkpoints_array[i-1].z
+                ):normalized()
+                M.checkpoints_array[i].dx = dirVector.x
+                M.checkpoints_array[i].dy = dirVector.y
+                M.checkpoints_array[i].dz = dirVector.z
+
+                if i == 2 then
+                    M.checkpoints_array[1].dx = dirVector.x
+                    M.checkpoints_array[1].dy = dirVector.y
+                    M.checkpoints_array[1].dz = dirVector.z
+                end
+            end
+        end
+
+        local searchIdxStart = 1
+        for _, pacenote in ipairs(pacenotes) do
+            local point = driveline:findNearestPoint(pacenote:getCornerStartWaypoint().pos, searchIdxStart)
+            searchIdxStart = point.id
+
+            descriptions = M.getPacenoteDescriptions(pacenote)
+
+            -- call this to ensure cached flowgraph data is populated
+            pacenote:asFlowgraphData(M.rallyManager.codriver)
+
+            for i, description in ipairs(descriptions) do
+                local pacenote = {
+                    d = M.checkpoints_array[point.id].d + (i-1) / #descriptions,
+                    pacenoteGeneric = description
+                }
+                table.insert(M.pacenotes_data, pacenote)
+            end
+        end
+
+        M.rallyId = M.rallyManager.missionDir -- note this has /gameplay/missions/level/...
+        M.mode = "rally"
+
+        resetRally()
+
+        M.guiConfig.isRallyChanged = false
+
+        M.serverUpdateMission()
+
+        M.guiSendMissionData()
+        M.guiSendPacenoteData()
+        M.guiSendGuiData()
+    end
 end
 
 -- server functions
