@@ -57,6 +57,11 @@ angular.module('beamng.apps')
       scope.SharedDataService = SharedDataService;
       scope.viewMode = 'edit';
 
+      scope.settingsSpokenPacenotes = true;
+      scope.settingsAiPacenotes = true;
+      scope.settingsSpokenDamage = true;
+      scope.settingsAipacenoteMicId = '';
+
       scope.followNote = true;
       scope.recordAtNote = false;
       scope.isAnalyzing = true;
@@ -263,6 +268,32 @@ angular.module('beamng.apps')
         }
       });
 
+      scope.$watch('settingsSpokenPacenotes', function(newVal, oldVal) {
+        if (newVal !== oldVal) {
+          bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.settings.spoken_pacenotes = ${newVal}`);
+        }
+      });
+
+      scope.$watch('settingsSpokenDamage', function(newVal, oldVal) {
+        if (newVal !== oldVal) {
+          bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.settings.spoken_damage = ${newVal}`);
+        }
+      });
+
+      scope.$watch('settingsAiPacenotes', function(newVal, oldVal) {
+        if (newVal !== oldVal) {
+          bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.settings.aipacenoteRallies = ${newVal}`);
+        }
+      });
+
+      scope.$watch('settingsAipacenoteMicId', function(newVal, oldVal) {
+        if (newVal !== oldVal) {
+          // remove ' from string
+          newVal = newVal.replace(/'/g, '');
+          bngApi.engineLua(`extensions.scripts_sopo__pacenotes_extension.settings.aipacenoteRallyMicId = '${newVal}'`);
+        }
+      });
+
       scope.$watch('pacenotes_data', function(newVal, oldVal) {
 
         let userChanged = true;
@@ -410,6 +441,10 @@ angular.module('beamng.apps')
         scope.panelStates = args.guiPanelStates;
         scope.isRallyChanged = args.isRallyChanged;
         scope.playbackVolume = args.playbackVolume;
+        scope.settingsSpokenPacenotes = args.spoken_pacenotes;
+        scope.settingsAiPacenotes = args.aipacenoteRallies;
+        scope.settingsSpokenDamage = args.spoken_damage;
+        scope.settingsAipacenoteMicId = args.aipacenoteRallyMicId;
 
         // apply guiPanelStates
         for (const panel in scope.panelStates) {

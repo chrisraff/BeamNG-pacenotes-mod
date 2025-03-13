@@ -675,6 +675,7 @@ local function updateRally(dt)
     M.tick = M.tick - 0.1
 
     if M.rallyId == nil then return end
+    if M.settings.spoken_pacenotes == false then return end
 
     local my_veh = be:getPlayerVehicle(0)
     if my_veh == nil then return end
@@ -1313,6 +1314,10 @@ local function guiSendGuiData()
     M.guiConfig.playbackVolume = M.settings.sound_data.volume
     M.guiConfig.guiPanelStates = M.settings.guiPanelStates
     M.guiConfig.guiTableHeight = M.settings.guiTableHeight
+    M.guiConfig.spoken_pacenotes = M.settings.spoken_pacenotes
+    M.guiConfig.spoken_damage = M.settings.spoken_damage
+    M.guiConfig.aipacenoteRallies = M.settings.aipacenoteRallies
+    M.guiConfig.aipacenoteRallyMicId = M.settings.aipacenoteRallyMicId
     guihooks.trigger('GuiDataUpdate', M.guiConfig)
 end
 

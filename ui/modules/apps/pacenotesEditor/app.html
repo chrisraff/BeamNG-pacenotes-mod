@@ -289,11 +289,31 @@
                 <span class="hover-hint" data-hover="Adds additonal lookahead distance based on car speed.">Speed Sensitivity:</span>
                 <input type="number" id="speed-multiplier" ng-model="speedMultiplier" step="0.1">
             </p>
-                <p style="display: flex; align-items: center; justify-content: flex-start; gap: 15px;">
-                    Volume:
-                    <input type="range" id="playback-volume" ng-model="playbackVolume" min="0" max="100" style="width: 50; margin-left: 15px; margin-right: 15px;">
-                    {{playbackVolume}}
-                </p>
+            <p style="display: flex; align-items: center; justify-content: flex-start; gap: 15px;">
+                Volume:
+                <input type="range" id="playback-volume" ng-model="playbackVolume" min="0" max="100" style="width: 50; margin-left: 15px; margin-right: 15px;">
+                {{playbackVolume}}
+            </p>
+            <details id="settings-panel">
+                <summary>Settings</summary>
+                <input type="checkbox" id="setting-playback" ng-model="settingsSpokenPacenotes">
+                <label for="setting-playback"><b>Pacenote Playback</b></label>
+
+                <br>
+
+                <input type="checkbox" id="setting-aipacenotes" ng-model="settingsAiPacenotes">
+                <label for="setting-aipacenotes">Built-in Rallies</label>
+
+                <br>
+
+                <input type="checkbox" id="setting-damage" ng-model="settingsSpokenDamage">
+                <label for="setting-damage"><b>Damage Calls</b></label>
+
+                <br>
+
+                <label for="aipacenote-mic-id" class="hover-hint" data-hover="Use this mic id to automatically generate pacenotes if none are recorded.">Generic Mic Id:</label>
+                <input type="text" id="aipacenote-mic-id" ng-model="settingsAipacenoteMicId" ng-model-options="{ debounce: 100 }" placeholder="sopo_psvr2">
+            </details>
         </details>
 
         <details id="mic-server-panel" open>
