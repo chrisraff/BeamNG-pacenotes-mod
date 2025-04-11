@@ -62,7 +62,6 @@ M.last_position = vec3(0, 0, 0)
 M.isAipacenotesRally = false
 
 M.showedUserMuteWarning = false
-M.muteVersionMinValue = 0.35
 
 M.audioQueue = {}
 M.audioQueueClearing = false
@@ -283,10 +282,17 @@ local function loadOrNewRally(rallyId)
     rallyId = rallyId or M.rallyId
     local result = M.loadRally(rallyId)
 
-    -- once per session, alert the user of the mute setting
-    if result and M.settings.muteOnAiPacenotes and M.isAipacenotesRally and not M.showedUserMuteWarning then
-        guihooks.trigger('toastrMsg', {type = "info", title = "Custom Rally Pacenotes Muted", msg = "This Rally has official voice calls. Check keybindings to unmute.", config = {timeOut = 5000}})
-        M.showedUserMuteWarning = true
+    -- adjust beamng audio pacenotes setting paced on user preference
+    if result and M.isAipacenotesRally then
+        if M.settings.muteOnAiPacenotes then
+            -- once per session, alert the user of the mute setting
+            if M.showedUserMuteWarning then
+                guihooks.trigger('toastrMsg', {type = "info", title = "Custom Rally Pacenotes Muted", msg = "This Rally has BeamNG voice calls. Check keybindings to toggle.", config = {timeOut = 5000}})
+                M.showedUserMuteWarning = true
+            end
+        else
+            settings.setValue('rallyAudioPacenotes', false)
+        end
     end
 
     if not result then
@@ -409,6 +415,11 @@ local function cleanup()
         M.savePacenoteData()
     end
 
+    -- restore beamng audio pacenotes
+    if M.isAipacenotesRally and not M.settings.muteOnAiPacenotes then
+        settings.setValue('rallyAudioPacenotes', true)
+    end
+
     if M.guiConfig.isRallyChanged then
         jsonWriteFile('pacenotes_sp/' .. M.levelId .. '/' .. M.rallyId .. '/pacenotes_autosave.json', M.pacenotes_data)
     end
@@ -451,18 +462,21 @@ end
 local function setup(scenarioOrMission, isReversed)
     isReversed = isReversed or false
 
+    if M.mode ~= 'none' then
+        cleanup()
+    end
+
     if scenarioOrMission then
         local newPath = getPath(scenarioOrMission)
 
         -- Extract the first part of the path (before the first '/')
         local level, remainingPath = newPath:match("([^/]+)/(.+)")
 
-        -- if this is a rally stage (in >= 0.35) we need to track it as aipacenotes rally for muting
-        local version = tonumber( string.match(FS:getFileRealPath('/'), "0.%d+") )
-        local path1Exists = FS:directoryExists('gameplay/missions/' .. newPath .. '/aipacenotes/notebooks')
-        local path2Exists = FS:directoryExists(remainingPath .. '/aipacenotes/notebooks')
-        if version >= M.muteVersionMinValue and (path1Exists or path2Exists) then
-            log('I', M.logTag, 'Custom Rally Pacenotes might mute for this stage')
+        -- if this is a rally stage we need to track it as aipacenotes rally for muting
+        local path1Exists = FS:directoryExists('gameplay/missions/' .. newPath .. '/rally/notebooks')
+        local path2Exists = FS:directoryExists(remainingPath .. '/rally/notebooks')
+        if path1Exists or path2Exists then
+            log('I', M.logTag, 'Custom Rally Pacenotes detected an aipacenotes rally')
             M.isAipacenotesRally = true
         end
 
@@ -1186,10 +1200,14 @@ end
 
 M.handleAipacenotesToggle = function()
     M.settings.muteOnAiPacenotes = not M.settings.muteOnAiPacenotes
-    local val = M.settings.muteOnAiPacenotes and 'enabled' or 'disabled'
+    if M.isAipacenotesRally and M.mode == "rally" then
+        settings.setValue('rallyAudioPacenotes', M.settings.muteOnAiPacenotes)
+    end
+
+    local message = M.settings.muteOnAiPacenotes and 'Pacenotes: BeamNG' or 'Pacenotes: Custom Rally Pacenotes'
     guihooks.trigger('Message', {
         ttl = 3,
-        msg = 'Custom Rally Pacenotes Mute (rally mode only): ' .. val,
+        msg = message,
         category = 'sopo_pacenotes_aipacenotes_mute'
     })
     M.saveSettings()
