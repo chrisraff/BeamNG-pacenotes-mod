@@ -1028,14 +1028,12 @@ local function serverUpdateDataPath()
         fullPath = fullPath:gsub('\\', '/')
         log('I', M.logTag, 'Full path: ' .. fullPath)
 
-        -- Start from the end and backtrack until you find the version folder
-        local trimmedPath = fullPath:match("(.-/%d+%.%d+)/") .. '/pacenotes_sp'
-        if trimmedPath then
-            log('I', M.logTag, 'Trimmed path: ' .. trimmedPath)
-            M.micServer:send('data_path ' .. trimmedPath .. '\n')
-        else
-            log('E', M.logTag, 'Could not find a valid version number in the path!')
-        end
+        -- Pre 0.37, find the version number.
+        -- In all cases, append '/pacenotes_sp' to the path
+        local trimmedPath = (fullPath:match("(.-/%d+%.%d+)/") or fullPath:match("(.-/current)/") or fullPath:gsub("/*$", "")) .. '/pacenotes_sp'
+
+        log('I', M.logTag, 'SP Pacenote Path: ' .. trimmedPath)
+        M.micServer:send('data_path ' .. trimmedPath .. '\n')
     end
 end
 
