@@ -311,7 +311,7 @@ local function loadRally(rallyId)
     end
 
     -- temporary adaptation step
-    if file[1][1].x == nil then
+    if file[1] and file[1][1] and file[1][1].x == nil then
         print(' >>>>>>>>> adapting checkpoints array')
         file[1] = adaptCheckpointsArray(file[1])
 
