@@ -31,7 +31,7 @@ M.settings = {
         ["playback-panel"] = true,
         ["mic-server-panel"] = false
     },
-    muteOnAiPacenotes = true,
+    muteOnAiPacenotes = false,
     guiTableHeight = 300,
     rallyPaths = {}
 }
@@ -180,6 +180,12 @@ local function queueUpUntil(lookahead_target)
                     playEndDistance = nil
                 }
             end
+
+            -- once per session, alert the user of the mute setting
+            if not M.showedUserMuteWarning then
+                guihooks.trigger('toastrMsg', {type = "info", title = "Custom Rally Pacenotes Muted", msg = "This Rally has custom voice calls, but BeamNG pacenotes are playing. In keybindings, search 'toggle playback' to toggle which pacenotes play.", config = {timeOut = 15000}})
+                M.showedUserMuteWarning = true
+            end
         end
     end
     M.distance_of_last_queued_note = math.max(lookahead_target, M.distance_of_last_queued_note)
@@ -282,15 +288,13 @@ local function loadOrNewRally(rallyId)
     rallyId = rallyId or M.rallyId
     local result = M.loadRally(rallyId)
 
-    -- adjust beamng audio pacenotes setting paced on user preference
+    -- adjust beamng audio pacenotes setting based on user preference
     if result and M.isAipacenotesRally then
         if M.settings.muteOnAiPacenotes then
-            -- once per session, alert the user of the mute setting
-            if M.showedUserMuteWarning then
-                guihooks.trigger('toastrMsg', {type = "info", title = "Custom Rally Pacenotes Muted", msg = "This Rally has BeamNG voice calls. Check keybindings to toggle.", config = {timeOut = 5000}})
-                M.showedUserMuteWarning = true
-            end
+            -- let BeamNG's own pacenotes play; silence custom ones in updateAudioQueue
+            settings.setValue('rallyAudioPacenotes', true)
         else
+            -- disable BeamNG's pacenotes for this stage
             settings.setValue('rallyAudioPacenotes', false)
         end
     end
