@@ -559,6 +559,11 @@ local function onScenarioChange(scenario)
 end
 
 local function onUiChangedState(curUIState, prevUIState)
+    -- unknown does not update state - keep the last state
+    if curUIState == 'unknown' then
+        return;
+    end
+
     log('I', M.logTag, 'ui changed state: ' .. curUIState .. ', ' .. prevUIState)
     M.uiState = curUIState
 
