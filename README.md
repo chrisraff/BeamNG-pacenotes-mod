@@ -28,6 +28,10 @@ These playback settings can be tuned from the UI or via keybinds (under "General
   Experiment with this to find the best balance for your driving.
 - **Volume**: Controls the playback volume of pacenotes.
 
+## Compatibility with BeamNG Rally Pacenotes
+
+The built-in BeamNG rally scenarios include their own voice pacenotes. When this mod has pacenotes available on a rally stage, it will automatically mute the BeamNG pacenotes so your custom pacenotes play instead. To switch back to BeamNG's pacenotes, bind the **"Toggle Custom Rally Pacenotes"** action (found under "General" in the keybindings menu) and press it in or out of the stage.
+
 ## How to Record Pacenotes
 1. **Set up the mic server** as detailed below (required since *BeamNG.drive* can't access microphones natively).
 2. **Bind the "Record Pacenote" action** to a button or key.
