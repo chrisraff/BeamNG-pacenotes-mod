@@ -182,7 +182,7 @@ local function queueUpUntil(lookahead_target)
             end
 
             -- once per session, alert the user of the mute setting
-            if not M.showedUserMuteWarning then
+            if (not M.showedUserMuteWarning) and M.settings.muteOnAiPacenotes and M.isAipacenotesRally then
                 guihooks.trigger('toastrMsg', {type = "info", title = "Custom Rally Pacenotes Muted", msg = "This Rally has custom voice calls, but BeamNG pacenotes are playing. In keybindings, search 'toggle playback' to toggle which pacenotes play.", config = {timeOut = 15000}})
                 M.showedUserMuteWarning = true
             end
