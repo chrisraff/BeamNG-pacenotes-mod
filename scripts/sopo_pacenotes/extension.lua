@@ -132,8 +132,8 @@ local function adaptPacenotesData(pacenotes)
     return pacenotes
 end
 
-local function onExtensionLoaded()
-    log('I', M.logTag, '>>>>>>>>>>>>>>>>>>>>> onExtensionLoaded from sopo ext')
+M.onInit = function()
+    log('I', M.logTag, '>>>>>>>>>>>>>>>>>>>>> onInit from sopo pacenotes')
 
     setExtensionUnloadMode(M, 'manual')
 
@@ -1283,7 +1283,6 @@ M.loadOrNewRally = loadOrNewRally
 M.copyRally = copyRally
 M.deleteRally = deleteRally
 M.cleanup = cleanup
-M.onExtensionLoaded = onExtensionLoaded
 M.switchRallyFromRecce = switchRallyFromRecce
 M.onAnyMissionChanged = onAnyMissionChanged
 M.onUiChangedState = onUiChangedState
